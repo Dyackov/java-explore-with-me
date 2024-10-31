@@ -1,9 +1,12 @@
 package ru.practicum.service;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import ru.practicum.error.exception.ValidationException;
 import ru.practicum.mapper.ViewStatsMapper;
 import ru.practicum.model.DtoViewStats;
@@ -19,7 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class StatisticsServiceImplTest {
 
     @Mock
