@@ -20,7 +20,7 @@ public class TestStatistics {
         this.statisticsClient = statisticsClient;
     }
 
-    @PostMapping("/hit")
+    @PostMapping(value = "/hit")
     public ResponseEntity<String> createHit(@RequestBody @Valid DtoEndpointHit dtoEndpointHit) {
         log.info("Запрос на создание статистики:\n{}", dtoEndpointHit);
         statisticsClient.createHit(dtoEndpointHit);
