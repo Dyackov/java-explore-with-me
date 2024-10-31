@@ -9,4 +9,3 @@ CREATE TABLE IF NOT EXISTS EndpointHit
     timestamp TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT pk_stats PRIMARY KEY (id)
 );
-ё
