@@ -6,9 +6,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.user.dto.NewUserRequest;
-import ru.practicum.user.dto.UserDto;
-import ru.practicum.user.service.UserServiceImpl;
+import ru.practicum.user.model.dto.NewUserRequest;
+import ru.practicum.user.model.dto.UserDto;
+import ru.practicum.user.service.UserService;
 
 import java.util.List;
 
@@ -19,8 +19,7 @@ import java.util.List;
 @Slf4j
 public class AdminUserController {
 
-    private final UserServiceImpl userServiceImpl;
-
+    private final UserService userServiceImpl;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -49,7 +48,6 @@ public class AdminUserController {
         log.info("Получен запрос на удаление пользователя id: {}", userId);
         userServiceImpl.deleteUserById(userId);
     }
-
 
     private void logRequestDetails(HttpServletRequest request) {
         String method = request.getMethod();
