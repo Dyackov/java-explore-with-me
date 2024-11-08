@@ -52,6 +52,4 @@ public class AdminCategoryController {
         String params = queryString != null ? "?" + queryString : "";
         log.info("{} {}{}", method, url, params);
     }
-
-
 }

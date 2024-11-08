@@ -31,7 +31,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void deleteCategoryById(long catId) {
         log.debug("Удаление категории id: {}", catId);
-        getCategoryOrThrow(catId);
+        getCategoryByIdOrThrow(catId);
         categoryRepository.deleteById(catId);
         log.info("Категория с id: {} , удалёна", catId);
     }
@@ -39,15 +39,15 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto updateCategoryById(long catId, NewCategoryDto newCategoryDto) {
         log.debug("Обновление категории id: {}", catId);
-        Category category = getCategoryOrThrow(catId);
+        Category category = getCategoryByIdOrThrow(catId);
         category.setName(newCategoryDto.getName());
         Category updatedCategory = categoryRepository.save(category);
         log.info("Обновлена категория:\n{}", updatedCategory);
         return categoryMapper.toCategoryDto(category);
     }
 
-
-    private Category getCategoryOrThrow(long catId) {
+    @Override
+    public Category getCategoryByIdOrThrow(long catId) {
         return categoryRepository.findById(catId).orElseThrow(() -> new NotFoundException(
                 "Category with id = " + catId + " was not found"));
     }
