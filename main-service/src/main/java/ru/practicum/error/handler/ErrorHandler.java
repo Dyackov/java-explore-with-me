@@ -79,6 +79,12 @@ public class ErrorHandler {
                 reason = "Для запрошенной операции условия не выполнены.";
                 message = ex.getMessage();
             }
+            case IntegrityViolationException ex -> {
+                status = HttpStatus.CONFLICT;
+                reason = "Ограничение целостности нарушено.";
+                message = ex.getMessage();
+
+            }
             default -> {
                 message = e.getMessage();
                 reason = "ValidationException";
