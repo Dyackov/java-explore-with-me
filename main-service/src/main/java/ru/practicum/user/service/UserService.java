@@ -1,5 +1,6 @@
 package ru.practicum.user.service;
 
+import ru.practicum.user.model.User;
 import ru.practicum.user.model.dto.NewUserRequest;
 import ru.practicum.user.model.dto.UserDto;
 
@@ -11,4 +12,6 @@ public interface UserService {
     List<UserDto> getUsers(List<Integer> ids, int from, int size);
 
     void deleteUserById(long userId);
+
+    User getUserByIdOrThrow(long userId);
 }

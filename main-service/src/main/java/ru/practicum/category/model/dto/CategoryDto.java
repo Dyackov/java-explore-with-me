@@ -1,9 +1,13 @@
 package ru.practicum.category.model.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class CategoryDto {
-    Long id;
-    String name;
+    private Long id;
+    private String name;
 }

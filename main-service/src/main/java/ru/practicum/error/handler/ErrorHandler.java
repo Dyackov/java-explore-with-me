@@ -10,8 +10,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.practicum.error.exception.NotFoundException;
-import ru.practicum.error.exception.ValidationException;
+import ru.practicum.error.exception.*;
 import ru.practicum.error.model.ApiError;
 import ru.practicum.error.model.ApiErrors;
 
@@ -27,12 +26,14 @@ public class ErrorHandler {
             MissingServletRequestParameterException.class,
             MethodArgumentNotValidException.class,
             DataIntegrityViolationException.class,
-            NotFoundException.class})
+            NotFoundException.class,
+            DataTimeException.class,
+            AuthorizationException.class})
     public ResponseEntity<ApiError> handle(final Exception e) {
         log.warn(e.getMessage());
-        HttpStatus status;
-        String reason;
-        String message;
+        HttpStatus status = HttpStatus.OK;
+        String reason = null;
+        String message = null;
 
         switch (e) {
             case MethodArgumentNotValidException ex -> {
@@ -55,13 +56,36 @@ public class ErrorHandler {
                 reason = "Искомый объект не был найден.";
                 message = ex.getMessage();
             }
+            case DataTimeException ex -> {
+                if (ex.getMessage().contains("раньше, чем через два часа")) {
+                    status = HttpStatus.BAD_REQUEST;
+                    reason = "Неправильно сделан запрос с датой и временем";
+                    message = ex.getMessage();
+                }
+                if (ex.getMessage().contains("не может быть в прошлом")) {
+                    status = HttpStatus.FORBIDDEN;
+                    reason = "Для запрошенной операции условия не выполнены.";
+                    message = ex.getMessage();
+                }
+            }
+            case AuthorizationException ex -> {
+                status = HttpStatus.UNAUTHORIZED;
+                reason = "Для запрошенной операции не пройдена авторизация.";
+                message = ex.getMessage();
+
+            }
+            case StateValidateException ex -> {
+                status = HttpStatus.FORBIDDEN;
+                reason = "Для запрошенной операции условия не выполнены.";
+                message = ex.getMessage();
+            }
             default -> {
                 message = e.getMessage();
                 reason = "ValidationException";
                 status = HttpStatus.BAD_REQUEST;
             }
-        }
 
+        }
         ApiError apiError = ApiError.builder()
                 .status(status.name())
                 .reason(reason)
@@ -69,8 +93,10 @@ public class ErrorHandler {
                 .timestamp(LocalDateTime.now())
                 .build();
 
+
         return ResponseEntity.status(status).body(apiError);
     }
+
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
