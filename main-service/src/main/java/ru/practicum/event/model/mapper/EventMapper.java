@@ -1,7 +1,6 @@
 package ru.practicum.event.model.mapper;
 
 import org.mapstruct.*;
-import ru.practicum.category.model.Category;
 import ru.practicum.category.model.mapper.CategoryMapper;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.dto.EventFullDto;
@@ -12,7 +11,6 @@ import ru.practicum.user.model.mapper.UserMapper;
 
 @Mapper(uses = {CategoryMapper.class, EventMapper.class, UserMapper.class, LocationMapper.class, StateAction.class})
 public interface EventMapper {
-
     @Mapping(source = "category", target = "category.id")
     Event toEvent(NewEventDto newEventDto);
 
@@ -26,13 +24,5 @@ public interface EventMapper {
     Event partialUpdate(EventShortDto eventShortDto, @MappingTarget Event event);
 
 
-    default Category createCategory(Long categoryId) {
-        if (categoryId == null) {
-            return null;
-        }
-        Category category = new Category();
-        category.setId(categoryId);
-        return category;
-    }
 }
 

@@ -8,25 +8,25 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.service.CategoryService;
-import ru.practicum.error.exception.AuthorizationException;
-import ru.practicum.error.exception.DataTimeException;
-import ru.practicum.error.exception.NotFoundException;
-import ru.practicum.error.exception.StateValidateException;
+import ru.practicum.error.exception.*;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.Location;
-import ru.practicum.event.model.dto.EventFullDto;
-import ru.practicum.event.model.dto.EventShortDto;
-import ru.practicum.event.model.dto.NewEventDto;
-import ru.practicum.event.model.dto.UpdateEventUserRequest;
+import ru.practicum.event.model.dto.*;
 import ru.practicum.event.model.enums.State;
 import ru.practicum.event.model.mapper.EventMapper;
 import ru.practicum.event.model.mapper.LocationMapper;
 import ru.practicum.event.storage.EventRepository;
 import ru.practicum.event.storage.LocationRepository;
+import ru.practicum.request.model.Request;
+import ru.practicum.request.model.dto.ParticipationRequestDto;
+import ru.practicum.request.model.enums.RequestState;
+import ru.practicum.request.model.mapper.RequestMapper;
+import ru.practicum.request.storage.RequestRepository;
 import ru.practicum.user.model.User;
 import ru.practicum.user.service.UserService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,12 +37,14 @@ public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
     private final LocationRepository locationRepository;
+    private final RequestRepository requestRepository;
 
     private final CategoryService categoryServiceImpl;
     private final UserService userServiceImpl;
 
     private final EventMapper eventMapper;
     private final LocationMapper locationMapper;
+    private final RequestMapper requestMapper;
 
     @Override
     public List<EventShortDto> getEventsByUserId(long userId, int from, int size) {
@@ -95,7 +97,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFullDto updateEvent(long userId, long eventId, UpdateEventUserRequest updateEventUserRequest) {
         log.debug("Обновление события ID: {}\n{}", eventId, updateEventUserRequest);
-        User user = userServiceImpl.getUserByIdOrThrow(userId);
+        userServiceImpl.getUserByIdOrThrow(userId);
         Event event = getEventAndCheckAuthorization(userId, eventId);
         if (updateEventUserRequest.getEventDate() != null) {
             if (updateEventUserRequest.getEventDate().isBefore(LocalDateTime.now())) {
@@ -114,6 +116,67 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toEventFullDto(savedEvent);
     }
 
+    @Override
+    public List<ParticipationRequestDto> getParticipationRequestsForUserEvents(long userId, long eventId) {
+        log.debug("Получение запросов на участие в событии. ID пользователя: {}, ID события :{}", userId, eventId);
+        userServiceImpl.getUserByIdOrThrow(userId);
+        getEventAndCheckAuthorization(userId, eventId);
+        List<Request> requests = requestRepository.findByEventId(eventId);
+        log.info("Получен список запросов на участие.\n{}", requests);
+        return requests.stream().map(requestMapper::toParticipationRequestDto).toList();
+    }
+
+    @Override
+    public EventRequestStatusUpdateResult updateRequestStatus(long userId, long eventId,
+                                                              EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
+        log.info("Изменение статуса (подтверждена, отменена) заявок на участие в событии. " +
+                "ID пользователя: {}, ID события :{}", userId, eventId);
+        userServiceImpl.getUserByIdOrThrow(userId);
+        Event event = getEventAndCheckAuthorization(userId, eventId);
+        if (event.getParticipantLimit() == 0 || event.getRequestModeration().equals(false)) {
+            String message = "";
+            if (event.getParticipantLimit() == 0) {
+                message = "Лимит заявок равен 0, ";
+            }
+            if (event.getRequestModeration().equals(false)) {
+                message = "Отключена пре-модерация заявок, ";
+            }
+            throw new ValidationException(message + "подтверждение заявки не требуется");
+        }
+        if (event.getConfirmedRequests().equals(event.getParticipantLimit())) {
+            throw new ValidationException("Достигнут лимит по заявкам на данное событие");
+        }
+
+        List<Request> requests = requestRepository.findAllById(eventRequestStatusUpdateRequest.getRequestIds());
+        log.info("Заявки для изменения статуса:\n{}", requests);
+
+        List<Request> confirmedRequests = new ArrayList<>();
+        List<Request> rejectedRequests = new ArrayList<>();
+
+        for (Request request : requests) {
+            if (request.getStatus() != RequestState.PENDING) {
+                throw new ValidationException("Статус можно изменить только у заявок, находящихся в состоянии ожидания");
+            }
+            if (event.getConfirmedRequests() < event.getParticipantLimit()) {
+                request.setStatus(RequestState.CONFIRMED);
+                confirmedRequests.add(request);
+                event.setConfirmedRequests(event.getConfirmedRequests() + 1);
+            } else {
+                request.setStatus(RequestState.REJECTED);
+                rejectedRequests.add(request);
+            }
+        }
+
+        eventRepository.save(event);
+        requestRepository.saveAll(confirmedRequests);
+
+        EventRequestStatusUpdateResult eventRequestStatusUpdateResult = EventRequestStatusUpdateResult.builder()
+                .confirmedRequests(confirmedRequests.stream().map(requestMapper::toParticipationRequestDto).toList())
+                .rejectedRequests(rejectedRequests.stream().map(requestMapper::toParticipationRequestDto).toList())
+                .build();
+        log.info("Статусы изменены заявок на участие изменены.\n{}", eventRequestStatusUpdateResult);
+        return eventRequestStatusUpdateResult;
+    }
 
     @Override
     public Event getEventByIdOrThrow(long eventId) {
