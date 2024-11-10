@@ -16,16 +16,16 @@ import java.util.List;
 @RequestMapping("/categories")
 @RequiredArgsConstructor
 @Slf4j
-public class PublicCategoriesController {
+public class PublicCategoryController {
 
     private final CategoryService categoryServiceImpl;
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<CategoryDto> getCategories(@RequestParam int from,@RequestParam int size, HttpServletRequest request) {
+    public List<CategoryDto> getCategories(@RequestParam int from, @RequestParam int size, HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на получение категорий. from: {}, size: {}", from,size);
-        return categoryServiceImpl.getCategories(from,size);
+        log.info("Получен запрос на получение категорий. from: {}, size: {}", from, size);
+        return categoryServiceImpl.getCategories(from, size);
     }
 
     @GetMapping("/{catId}")

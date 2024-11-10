@@ -6,11 +6,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.event.model.dto.EventFullDto;
-import ru.practicum.event.model.dto.EventShortDto;
-import ru.practicum.event.model.dto.NewEventDto;
-import ru.practicum.event.model.dto.UpdateEventUserRequest;
+import ru.practicum.event.model.dto.*;
 import ru.practicum.event.service.EventService;
+import ru.practicum.request.model.dto.ParticipationRequestDto;
 
 import java.util.List;
 
@@ -64,6 +62,32 @@ public class PrivateEventController {
         log.info("Получен запрос на обновление события. ID пользователя: {}, ID события: {}.\n{}",
                 userId, eventId, updateEventUserRequest);
         return eventServiceImpl.updateEvent(userId, eventId, updateEventUserRequest);
+    }
+
+    @GetMapping("/{eventId}/requests")
+    @ResponseStatus(HttpStatus.OK)
+    public List<ParticipationRequestDto> getParticipationRequestsForUserEvents(@PathVariable long userId,
+                                                                               @PathVariable long eventId,
+                                                                               HttpServletRequest request) {
+        logRequestDetails(request);
+        log.info("Получен запрос на получение информации о запросах на участие в событии. " +
+                "ID пользователя: {}, ID события :{}", userId, eventId);
+
+        return eventServiceImpl.getParticipationRequestsForUserEvents(userId, eventId);
+    }
+
+    @PatchMapping("/{eventId}/requests")
+    @ResponseStatus(HttpStatus.OK)
+    public EventRequestStatusUpdateResult updateRequestStatus(@PathVariable long userId,
+                                                              @PathVariable long eventId,
+                                                              @Valid @RequestBody EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest,
+                                                              HttpServletRequest request) {
+        logRequestDetails(request);
+        log.info("Получен запрос на изменение статуса (подтверждена, отменена) заявок на участие в событии. " +
+                "ID пользователя: {}, ID события :{}\n{}", userId, eventId, eventRequestStatusUpdateRequest);
+
+
+        return eventServiceImpl.updateRequestStatus(userId, eventId, eventRequestStatusUpdateRequest);
     }
 
 

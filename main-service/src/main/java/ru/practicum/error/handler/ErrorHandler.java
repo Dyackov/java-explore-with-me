@@ -22,83 +22,80 @@ import java.util.List;
 @Slf4j
 public class ErrorHandler {
 
-    @ExceptionHandler({ValidationException.class,
+    @ExceptionHandler({
+            ValidationException.class,
             MissingServletRequestParameterException.class,
             MethodArgumentNotValidException.class,
             DataIntegrityViolationException.class,
             NotFoundException.class,
             DataTimeException.class,
-            AuthorizationException.class})
+            AuthorizationException.class,
+            StateValidateException.class,
+            IntegrityViolationException.class,
+            ValidateRequestException.class
+    })
     public ResponseEntity<ApiError> handle(final Exception e) {
         log.warn(e.getMessage());
-        HttpStatus status = HttpStatus.OK;
-        String reason = null;
-        String message = null;
+
+        HttpStatus status = HttpStatus.NO_CONTENT;
+        String reason = "Некорректный запрос.";
+        String message = e.getMessage();
 
         switch (e) {
             case MethodArgumentNotValidException ex -> {
                 status = HttpStatus.BAD_REQUEST;
                 reason = "Запрос составлен некорректно.";
-                message = ex.getMessage();
             }
             case MissingServletRequestParameterException ex -> {
-                message = String.format("Required parameter is missing: %s", ex.getParameterName());
-                reason = "MissingServletRequestParameterException";
                 status = HttpStatus.BAD_REQUEST;
+                reason = "Требуемый параметр отсутствует.";
+                message = String.format("Required parameter is missing: %s", ex.getParameterName());
             }
-            case DataIntegrityViolationException ex -> {
+            case DataIntegrityViolationException exData -> {
                 status = HttpStatus.CONFLICT;
-                reason = "Ограничение целостности было нарушено.";
-                message = ex.getMessage();
+                reason = "Ограничение целостности нарушено.";
+            }
+            case IntegrityViolationException exIntegrity -> {
+                status = HttpStatus.CONFLICT;
+                reason = "Ограничение целостности нарушено.";
             }
             case NotFoundException ex -> {
                 status = HttpStatus.NOT_FOUND;
-                reason = "Искомый объект не был найден.";
-                message = ex.getMessage();
+                reason = "Искомый объект не найден.";
             }
             case DataTimeException ex -> {
                 if (ex.getMessage().contains("раньше, чем через два часа")) {
                     status = HttpStatus.BAD_REQUEST;
-                    reason = "Неправильно сделан запрос с датой и временем";
-                    message = ex.getMessage();
-                }
-                if (ex.getMessage().contains("не может быть в прошлом")) {
+                    reason = "Неправильно составлен запрос с датой и временем";
+                } else if (ex.getMessage().contains("не может быть в прошлом")) {
                     status = HttpStatus.FORBIDDEN;
                     reason = "Для запрошенной операции условия не выполнены.";
-                    message = ex.getMessage();
                 }
             }
             case AuthorizationException ex -> {
                 status = HttpStatus.UNAUTHORIZED;
-                reason = "Для запрошенной операции не пройдена авторизация.";
-                message = ex.getMessage();
-
+                reason = "Не пройдена авторизация для запрошенной операции.";
             }
             case StateValidateException ex -> {
                 status = HttpStatus.FORBIDDEN;
                 reason = "Для запрошенной операции условия не выполнены.";
-                message = ex.getMessage();
             }
-            case IntegrityViolationException ex -> {
+            case ValidateRequestException ex -> {
                 status = HttpStatus.CONFLICT;
-                reason = "Ограничение целостности нарушено.";
-                message = ex.getMessage();
-
+                reason = "Запрос на участие в событии невозможен.";
             }
             default -> {
-                message = e.getMessage();
-                reason = "ValidationException";
-                status = HttpStatus.BAD_REQUEST;
+                reason = "Произошла ошибка при обработке запроса.";
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
             }
-
         }
+
         ApiError apiError = ApiError.builder()
                 .status(status.name())
                 .reason(reason)
                 .message(message)
                 .timestamp(LocalDateTime.now())
                 .build();
-
 
         return ResponseEntity.status(status).body(apiError);
     }
