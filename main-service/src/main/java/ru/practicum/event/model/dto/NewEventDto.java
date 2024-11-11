@@ -1,6 +1,7 @@
 package ru.practicum.event.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class NewEventDto {
     @NotNull
+    @NotBlank
     @Length(min = 20, max = 2000)
     String annotation;
 
@@ -22,6 +24,7 @@ public class NewEventDto {
     Long category;
 
     @NotNull
+    @NotBlank
     @Length(min = 20, max = 7000)
     String description;
 

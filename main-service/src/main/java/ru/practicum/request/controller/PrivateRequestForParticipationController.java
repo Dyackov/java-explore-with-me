@@ -24,6 +24,7 @@ public class PrivateRequestForParticipationController {
     public List<ParticipationRequestDto> getRequests(@PathVariable Long userId,
                                                      HttpServletRequest request) {
         logRequestDetails(request);
+        log.info("Private:Получен запрос на получение заявок на участие в событиях. Пользователь ID: {}", userId);
         return requestServiceImpl.getRequests(userId);
 
     }
@@ -34,6 +35,8 @@ public class PrivateRequestForParticipationController {
                                                  @RequestParam long eventId,
                                                  HttpServletRequest request) {
         logRequestDetails(request);
+        log.info("Private:Получен запрос на создание заявки на участие в событии. Пользователь ID: {}, Событие ID: {}",
+                userId, eventId);
         return requestServiceImpl.createRequest(userId, eventId);
     }
 
@@ -43,6 +46,8 @@ public class PrivateRequestForParticipationController {
                                                  @PathVariable long requestId,
                                                  HttpServletRequest request) {
         logRequestDetails(request);
+        log.info("Private:Получен запрос на обновление(отмену) собственной заявки на участие в событии. " +
+                "Пользователь ID: {}, Запрос ID: {}", userId, requestId);
         return requestServiceImpl.updateRequest(userId, requestId);
     }
 

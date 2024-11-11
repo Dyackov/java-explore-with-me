@@ -22,17 +22,20 @@ public class PublicCategoryController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<CategoryDto> getCategories(@RequestParam int from, @RequestParam int size, HttpServletRequest request) {
+    public List<CategoryDto> getCategories(@RequestParam int from,
+                                           @RequestParam int size,
+                                           HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на получение категорий. from: {}, size: {}", from, size);
+        log.info("Public:Получен запрос на получение категорий. from: {}, size: {}", from, size);
         return categoryServiceImpl.getCategories(from, size);
     }
 
     @GetMapping("/{catId}")
     @ResponseStatus(HttpStatus.OK)
-    public CategoryDto getCategoryById(@PathVariable int catId, HttpServletRequest request) {
+    public CategoryDto getCategoryById(@PathVariable int catId,
+                                       HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на получение категории Id: {}", catId);
+        log.info("Public:Получен запрос на получение категории Id: {}", catId);
         return categoryServiceImpl.getCategoryById(catId);
     }
 

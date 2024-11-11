@@ -27,15 +27,17 @@ public class PrivateEventController {
                                     @RequestBody @Valid NewEventDto newEventDto,
                                     HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на добавление нового события:\n{}", newEventDto);
+        log.info("Private:Получен запрос на добавление нового события:\n{}", newEventDto);
         return eventServiceImpl.createEvent(userId, newEventDto);
     }
 
     @GetMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
-    public EventFullDto getEventById(@PathVariable long userId, @PathVariable long eventId, HttpServletRequest request) {
+    public EventFullDto getEventById(@PathVariable long userId,
+                                     @PathVariable long eventId,
+                                     HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на получение полной информации о событии. ID пользователя: {}, ID события: {}",
+        log.info("Private:Получен запрос на получение полной информации о событии. ID пользователя: {}, ID события: {}",
                 userId, eventId);
         return eventServiceImpl.getEventById(userId, eventId);
     }
@@ -47,7 +49,7 @@ public class PrivateEventController {
                                                  @RequestParam(defaultValue = "10") int size,
                                                  HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на получение всех событий пользователя.\nID пользователя:{}, from:{}, size:{}",
+        log.info("Private:Получен запрос на получение всех событий пользователя.\nID пользователя:{}, from:{}, size:{}",
                 userId, from, size);
         return eventServiceImpl.getEventsByUserId(userId, from, size);
     }
@@ -59,7 +61,7 @@ public class PrivateEventController {
                                     @RequestBody @Valid UpdateEventUserRequest updateEventUserRequest,
                                     HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на обновление события. ID пользователя: {}, ID события: {}.\n{}",
+        log.info("Private:Получен запрос на обновление события. ID пользователя: {}, ID события: {}.\n{}",
                 userId, eventId, updateEventUserRequest);
         return eventServiceImpl.updateEvent(userId, eventId, updateEventUserRequest);
     }
@@ -70,7 +72,7 @@ public class PrivateEventController {
                                                                                @PathVariable long eventId,
                                                                                HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на получение информации о запросах на участие в событии. " +
+        log.info("Private:Получен запрос на получение информации о запросах на участие в событии. " +
                 "ID пользователя: {}, ID события :{}", userId, eventId);
 
         return eventServiceImpl.getParticipationRequestsForUserEvents(userId, eventId);
@@ -83,10 +85,8 @@ public class PrivateEventController {
                                                               @Valid @RequestBody EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest,
                                                               HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на изменение статуса (подтверждена, отменена) заявок на участие в событии. " +
+        log.info("Private:Получен запрос на изменение статуса (подтверждена, отменена) заявок на участие в событии. " +
                 "ID пользователя: {}, ID события :{}\n{}", userId, eventId, eventRequestStatusUpdateRequest);
-
-
         return eventServiceImpl.updateRequestStatus(userId, eventId, eventRequestStatusUpdateRequest);
     }
 
