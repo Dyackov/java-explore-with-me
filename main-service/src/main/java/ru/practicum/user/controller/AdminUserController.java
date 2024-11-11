@@ -23,7 +23,8 @@ public class AdminUserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto createUser(@RequestBody @Valid NewUserRequest newUserRequest, HttpServletRequest request) {
+    public UserDto createUser(@RequestBody @Valid NewUserRequest newUserRequest,
+                              HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Получен запрос на создание пользователя:\n{}", newUserRequest);
         return userServiceImpl.createUser(newUserRequest);
@@ -43,7 +44,8 @@ public class AdminUserController {
 
     @DeleteMapping("/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUserById(@PathVariable long userId, HttpServletRequest request) {
+    public void deleteUserById(@PathVariable long userId,
+                               HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Получен запрос на удаление пользователя id: {}", userId);
         userServiceImpl.deleteUserById(userId);

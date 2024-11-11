@@ -110,7 +110,7 @@ public class EventServiceImpl implements EventService {
         if (event.getState().equals(State.PUBLISHED)) {
             throw new StateValidateException("Можно изменить только отложенные или отмененные события");
         }
-        Event builderEvent = buildEventForUpdate(updateEventUserRequest, event);
+        Event builderEvent = buildPrivateEventForUpdate(updateEventUserRequest, event);
         Event savedEvent = eventRepository.save(builderEvent);
         log.info("Событие обновлено:\n{}", savedEvent);
         return eventMapper.toEventFullDto(savedEvent);
@@ -179,13 +179,81 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public List<EventFullDto> getAllEvents(List<Long> users, List<State> states, List<Long> categories,
+                                           LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
+        log.debug("""
+                Получение списка по поиску событий:
+                Список ID пользователей: {}\
+                Список состояний: {}\
+                Список ID категорий: {}\
+                Дата и время не раньше которых должно произойти событие: {}\
+                Дата и время не позже которых должно произойти событие: {}\
+                 from: {}, size: {}""", users, states, categories, rangeStart, rangeEnd, from, size);
+        Pageable pageable = createPageable(from, size, Sort.by(Sort.Direction.ASC, "createdOn"));
+        List<Event> events = eventRepository.findEvents(users, states, categories, rangeStart, rangeEnd, pageable);
+        log.info("Получен список по поиску событий.\n{}", events);
+        return events.stream().map(eventMapper::toEventFullDto).toList();
+    }
+
+    @Override
+    public EventFullDto updateEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
+        log.debug("admin Обновление события ID: {}\n{}", eventId, updateEventAdminRequest);
+        Event event = getEventByIdOrThrow(eventId);
+        if (updateEventAdminRequest.getEventDate() != null) {
+            if (updateEventAdminRequest.getEventDate().isBefore(event.getPublishedOn().plusHours(1))) {
+                throw new DataTimeException("Дата начала изменяемого события должна быть не ранее чем за час от даты публикации");
+            }
+        }
+
+        if (event.getState() == State.PUBLISHED) {
+            throw new ValidationException("Событие уже опубликовано");
+        }
+        Event builderEvent = buildAdminEventForUpdate(updateEventAdminRequest, event);
+        Event savedEvent = eventRepository.save(builderEvent);
+        log.info("Событие обновлено :\n{}", savedEvent);
+        return eventMapper.toEventFullDto(savedEvent);
+    }
+
+    private Event buildAdminEventForUpdate(UpdateEventAdminRequest updateEventAdminRequest, Event event) {
+        Optional.ofNullable(updateEventAdminRequest.getAnnotation()).ifPresent(event::setAnnotation);
+        if (updateEventAdminRequest.getCategory() != null) {
+            Category category = categoryServiceImpl.getCategoryByIdOrThrow(updateEventAdminRequest.getCategory());
+            event.setCategory(category);
+        }
+        Optional.ofNullable(updateEventAdminRequest.getDescription()).ifPresent(event::setDescription);
+        Optional.ofNullable(updateEventAdminRequest.getEventDate()).ifPresent(event::setEventDate);
+        if (updateEventAdminRequest.getLocation() != null) {
+            Location location = locationMapper.toLocation(updateEventAdminRequest.getLocation());
+            boolean checkExistLocation = locationRepository.existsByLatAndLon(location.getLat(), location.getLon());
+            if (!checkExistLocation) {
+                locationRepository.save(location);
+            }
+            event.setLocation(location);
+        }
+        Optional.ofNullable(updateEventAdminRequest.getPaid()).ifPresent(event::setPaid);
+        Optional.ofNullable(updateEventAdminRequest.getParticipantLimit()).ifPresent(event::setParticipantLimit);
+        Optional.ofNullable(updateEventAdminRequest.getRequestModeration()).ifPresent(event::setRequestModeration);
+        if (updateEventAdminRequest.getStateAction() != null) {
+            switch (updateEventAdminRequest.getStateAction()) {
+                case PUBLISH_EVENT -> event.setState(State.PUBLISHED);
+                case REJECT_EVENT -> event.setState(State.CANCELED);
+            }
+        }
+        Optional.ofNullable(updateEventAdminRequest.getTitle()).ifPresent(event::setTitle);
+        return event;
+    }
+
+
+    @Override
     public Event getEventByIdOrThrow(long eventId) {
+        log.info("Попытка получения События по ID: {}", eventId);
         return eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException(
                 "Event with id = " + eventId + " was not found"));
     }
 
     @Override
     public Event getEventAndCheckAuthorization(long userId, long eventId) {
+        log.info("Проверка авторизации, Пользователь ID: {}, Событие ID: {}", userId, eventId);
         Event event = getEventByIdOrThrow(eventId);
         if (event.getInitiator().getId() != userId) {
             throw new AuthorizationException("Пользователь ID: " + userId +
@@ -200,7 +268,7 @@ public class EventServiceImpl implements EventService {
     }
 
 
-    private Event buildEventForUpdate(UpdateEventUserRequest updateEventUserRequest, Event event) {
+    private Event buildPrivateEventForUpdate(UpdateEventUserRequest updateEventUserRequest, Event event) {
         Optional.ofNullable(updateEventUserRequest.getAnnotation()).ifPresent(event::setAnnotation);
         if (updateEventUserRequest.getCategory() != null) {
             Category category = categoryServiceImpl.getCategoryByIdOrThrow(updateEventUserRequest.getCategory());

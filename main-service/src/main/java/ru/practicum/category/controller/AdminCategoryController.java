@@ -21,17 +21,19 @@ public class AdminCategoryController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CategoryDto createCategory(@RequestBody @Valid NewCategoryDto newCategoryDto, HttpServletRequest request) {
+    public CategoryDto createCategory(@RequestBody @Valid NewCategoryDto newCategoryDto,
+                                      HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на добавление новой категории:\n{}", newCategoryDto);
+        log.info("Admin:Получен запрос на добавление новой категории:\n{}", newCategoryDto);
         return categoryServiceImpl.createCategory(newCategoryDto);
     }
 
     @DeleteMapping("/{catId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCategoryById(@PathVariable long catId, HttpServletRequest request) {
+    public void deleteCategoryById(@PathVariable long catId,
+                                   HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на удаление категории id: {}", catId);
+        log.info("Admin:Получен запрос на удаление категории id: {}", catId);
         categoryServiceImpl.deleteCategoryById(catId);
     }
 
@@ -41,9 +43,9 @@ public class AdminCategoryController {
                                           @RequestBody @Valid NewCategoryDto newCategoryDto,
                                           HttpServletRequest request) {
         logRequestDetails(request);
+        log.info("Admin:Получен запрос на обновление категории id: {}", catId);
         return categoryServiceImpl.updateCategoryById(catId, newCategoryDto);
     }
-
 
     private void logRequestDetails(HttpServletRequest request) {
         String method = request.getMethod();
