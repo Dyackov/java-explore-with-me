@@ -27,7 +27,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryMapper categoryMapper;
 
     @Override
-    public CategoryDto createCategory(NewCategoryDto newCategoryDto) {
+    public CategoryDto createCategoryAdmin(NewCategoryDto newCategoryDto) {
         log.debug("Создание категории:\n{}", newCategoryDto);
         Category category = categoryMapper.toCategory(newCategoryDto);
         Category resultCategory = categoryRepository.save(category);
@@ -36,7 +36,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public void deleteCategoryById(long catId) {
+    public void deleteCategoryByIdAdmin(long catId) {
         log.debug("Удаление категории id: {}", catId);
         getCategoryByIdOrThrow(catId);
         if (!eventRepository.findAllByCategoryId(catId).isEmpty()) {
@@ -48,7 +48,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public CategoryDto updateCategoryById(long catId, NewCategoryDto newCategoryDto) {
+    public CategoryDto updateCategoryByIdAdmin(long catId, NewCategoryDto newCategoryDto) {
         log.debug("Обновление категории id: {}", catId);
         Category category = getCategoryByIdOrThrow(catId);
         category.setName(newCategoryDto.getName());
@@ -58,7 +58,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public CategoryDto getCategoryById(long catId) {
+    public CategoryDto getCategoryByIdPublic(long catId) {
         log.debug("Получение категории Id: {}", catId);
         Category category = getCategoryByIdOrThrow(catId);
         log.info("Получена категория:\n{}", category);
@@ -66,7 +66,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public List<CategoryDto> getCategories(int from, int size) {
+    public List<CategoryDto> getCategoriesPublic(int from, int size) {
         log.debug("Получение категорий.");
         Pageable pageable = createPageable(from, size, Sort.by(Sort.Direction.ASC, "id"));
         List<Category> categories = categoryRepository.findAll(pageable).getContent();

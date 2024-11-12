@@ -21,30 +21,30 @@ public class AdminCategoryController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CategoryDto createCategory(@RequestBody @Valid NewCategoryDto newCategoryDto,
-                                      HttpServletRequest request) {
+    public CategoryDto createCategoryAdmin(@RequestBody @Valid NewCategoryDto newCategoryDto,
+                                           HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Admin:Получен запрос на добавление новой категории:\n{}", newCategoryDto);
-        return categoryServiceImpl.createCategory(newCategoryDto);
+        return categoryServiceImpl.createCategoryAdmin(newCategoryDto);
     }
 
     @DeleteMapping("/{catId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCategoryById(@PathVariable long catId,
-                                   HttpServletRequest request) {
+    public void deleteCategoryByIdAdmin(@PathVariable long catId,
+                                        HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Admin:Получен запрос на удаление категории id: {}", catId);
-        categoryServiceImpl.deleteCategoryById(catId);
+        categoryServiceImpl.deleteCategoryByIdAdmin(catId);
     }
 
     @PatchMapping("/{catId}")
     @ResponseStatus(HttpStatus.OK)
-    public CategoryDto updateCategoryById(@PathVariable long catId,
-                                          @RequestBody @Valid NewCategoryDto newCategoryDto,
-                                          HttpServletRequest request) {
+    public CategoryDto updateCategoryByIdAdmin(@PathVariable long catId,
+                                               @RequestBody @Valid NewCategoryDto newCategoryDto,
+                                               HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Admin:Получен запрос на обновление категории id: {}", catId);
-        return categoryServiceImpl.updateCategoryById(catId, newCategoryDto);
+        return categoryServiceImpl.updateCategoryByIdAdmin(catId, newCategoryDto);
     }
 
     private void logRequestDetails(HttpServletRequest request) {

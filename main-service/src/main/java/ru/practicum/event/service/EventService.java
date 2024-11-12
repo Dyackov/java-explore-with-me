@@ -10,27 +10,32 @@ import java.util.List;
 
 public interface EventService {
 
-    List<EventShortDto> getEventsByUserId(long userId, int from, int size);
+    List<EventShortDto> getEventsByUserIdPrivate(long userId, int from, int size);
 
-    EventFullDto createEvent(long userId, NewEventDto newEventDto);
+    EventFullDto createEventPrivate(long userId, NewEventDto newEventDto);
 
-    EventFullDto getEventById(long userId, long eventId);
+    EventFullDto getEventByIdPrivate(long userId, long eventId);
 
     EventFullDto updateEvent(long userId, long eventId, UpdateEventUserRequest updateEventUserRequest);
 
-    List<ParticipationRequestDto> getParticipationRequestsForUserEvents(long userId, long eventId);
+    List<ParticipationRequestDto> getParticipationRequestsForUserEventsPrivate(long userId, long eventId);
 
-    EventRequestStatusUpdateResult updateRequestStatus(long userId, long eventId, EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest);
+    EventRequestStatusUpdateResult updateRequestStatusPrivate(long userId, long eventId, EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest);
 
-    List<EventFullDto> getAllEvents(List<Long> users,
-                                    List<State> states,
-                                    List<Long> categories,
-                                    LocalDateTime rangeStart,
-                                    LocalDateTime rangeEnd,
-                                    int from,
-                                    int size);
+    List<EventFullDto> getAllEventsAdmin(List<Long> users,
+                                         List<State> states,
+                                         List<Long> categories,
+                                         LocalDateTime rangeStart,
+                                         LocalDateTime rangeEnd,
+                                         int from,
+                                         int size);
 
     EventFullDto updateEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest);
+
+    EventFullDto getEventByIdPublic(int id);
+
+    List<EventShortDto> getAllEventsPublic(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
+                                           LocalDateTime rangeEnd, Boolean onlyAvailable, String sort, int from, int size);
 
     Event getEventByIdOrThrow(long eventId);
 
