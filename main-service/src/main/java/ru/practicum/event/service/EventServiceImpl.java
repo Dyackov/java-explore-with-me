@@ -1,7 +1,9 @@
 package ru.practicum.event.service;
 
+import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -30,6 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static ru.practicum.event.model.QEvent.event;
+
 @RequiredArgsConstructor
 @Service
 @Slf4j
@@ -47,7 +51,7 @@ public class EventServiceImpl implements EventService {
     private final RequestMapper requestMapper;
 
     @Override
-    public List<EventShortDto> getEventsByUserId(long userId, int from, int size) {
+    public List<EventShortDto> getEventsByUserIdPrivate(long userId, int from, int size) {
         log.debug("Получение всех событий. ID пользователя:{}, from:{}, size:{}", userId, from, size);
         userServiceImpl.getUserByIdOrThrow(userId);
         Pageable pageable = createPageable(from, size, Sort.by(Sort.Direction.ASC, "createdOn"));
@@ -57,7 +61,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public EventFullDto createEvent(long userId, NewEventDto newEventDto) {
+    public EventFullDto createEventPrivate(long userId, NewEventDto newEventDto) {
         log.debug("Создание события: {}", newEventDto);
         if (newEventDto.getEventDate().isBefore(LocalDateTime.now())) {
             throw new DataTimeException("Дата и время на которые намечено событие не может быть в прошлом");
@@ -85,7 +89,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public EventFullDto getEventById(long userId, long eventId) {
+    public EventFullDto getEventByIdPrivate(long userId, long eventId) {
         log.debug("Получение события, ID пользователя: {}, ID события:{}", userId, eventId);
         getEventByIdOrThrow(eventId);
         Event event = getEventAndCheckAuthorization(userId, eventId);
@@ -117,7 +121,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<ParticipationRequestDto> getParticipationRequestsForUserEvents(long userId, long eventId) {
+    public List<ParticipationRequestDto> getParticipationRequestsForUserEventsPrivate(long userId, long eventId) {
         log.debug("Получение запросов на участие в событии. ID пользователя: {}, ID события :{}", userId, eventId);
         userServiceImpl.getUserByIdOrThrow(userId);
         getEventAndCheckAuthorization(userId, eventId);
@@ -127,8 +131,8 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public EventRequestStatusUpdateResult updateRequestStatus(long userId, long eventId,
-                                                              EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
+    public EventRequestStatusUpdateResult updateRequestStatusPrivate(long userId, long eventId,
+                                                                     EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
         log.info("Изменение статуса (подтверждена, отменена) заявок на участие в событии. " +
                 "ID пользователя: {}, ID события :{}", userId, eventId);
         userServiceImpl.getUserByIdOrThrow(userId);
@@ -179,8 +183,8 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventFullDto> getAllEvents(List<Long> users, List<State> states, List<Long> categories,
-                                           LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
+    public List<EventFullDto> getAllEventsAdmin(List<Long> users, List<State> states, List<Long> categories,
+                                                LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
         log.debug("""
                 Получение списка по поиску событий:
                 Список ID пользователей: {}\
@@ -214,33 +218,87 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toEventFullDto(savedEvent);
     }
 
-    private Event buildAdminEventForUpdate(UpdateEventAdminRequest updateEventAdminRequest, Event event) {
-        Optional.ofNullable(updateEventAdminRequest.getAnnotation()).ifPresent(event::setAnnotation);
-        if (updateEventAdminRequest.getCategory() != null) {
-            Category category = categoryServiceImpl.getCategoryByIdOrThrow(updateEventAdminRequest.getCategory());
-            event.setCategory(category);
+    @Override
+    public EventFullDto getEventByIdPublic(int id) {
+        log.debug("Получение события, ID события:{}", id);
+        Event event = getEventByIdOrThrow(id);
+
+        if (event.getState() != State.PUBLISHED) {
+            throw new NotFoundException("Событие не найдено.");
         }
-        Optional.ofNullable(updateEventAdminRequest.getDescription()).ifPresent(event::setDescription);
-        Optional.ofNullable(updateEventAdminRequest.getEventDate()).ifPresent(event::setEventDate);
-        if (updateEventAdminRequest.getLocation() != null) {
-            Location location = locationMapper.toLocation(updateEventAdminRequest.getLocation());
-            boolean checkExistLocation = locationRepository.existsByLatAndLon(location.getLat(), location.getLon());
-            if (!checkExistLocation) {
-                locationRepository.save(location);
+        log.info("Получено событие :\n{}", event);
+        return eventMapper.toEventFullDto(event);
+    }
+
+    @Override
+    public List<EventShortDto> getAllEventsPublic(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
+                                                  LocalDateTime rangeEnd, Boolean onlyAvailable, String sort, int from, int size) {
+        log.debug("""
+                Public:Получение событии с фильтрацией.
+                Текст для поиска: {}
+                Список идентификаторов категорий: {}
+                Платных/бесплатных событий: {}
+                Дата и время не раньше которых должно произойти событие: {}
+                Дата и время не позже которых должно произойти событие: {}
+                События у которых не исчерпан лимит запросов: {}
+                Вариант сортировки: {}
+                Количество событий, которые нужно пропустить: {}
+                Количество событий в наборе: {}
+                """, text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+
+        Page<Event> eventPage;
+        Pageable pageable;
+
+        BooleanBuilder booleanBuilder = new BooleanBuilder();
+
+        if (text != null && !text.isEmpty()) {
+            booleanBuilder.and(event.annotation.containsIgnoreCase(text))
+                    .or(event.description.containsIgnoreCase(text));
+        }
+
+        if (categories != null && !categories.isEmpty()) {
+            booleanBuilder.and(event.category.id.in(categories));
+        }
+
+        if (paid != null) {
+            booleanBuilder.and(event.paid.eq(paid));
+        }
+
+        if (rangeStart != null && rangeEnd != null) {
+            if (rangeStart.isAfter(rangeEnd)) {
+                throw new DataTimeException("Время начала должно быть не позже времени окончания.");
             }
-            event.setLocation(location);
+            booleanBuilder.and(event.eventDate.between(rangeStart, rangeEnd));
+        } else if (rangeStart == null && rangeEnd != null) {
+            booleanBuilder.and(event.eventDate.before(rangeEnd));
+        } else if (rangeStart != null) {
+            booleanBuilder.and(event.eventDate.after(rangeStart));
         }
-        Optional.ofNullable(updateEventAdminRequest.getPaid()).ifPresent(event::setPaid);
-        Optional.ofNullable(updateEventAdminRequest.getParticipantLimit()).ifPresent(event::setParticipantLimit);
-        Optional.ofNullable(updateEventAdminRequest.getRequestModeration()).ifPresent(event::setRequestModeration);
-        if (updateEventAdminRequest.getStateAction() != null) {
-            switch (updateEventAdminRequest.getStateAction()) {
-                case PUBLISH_EVENT -> event.setState(State.PUBLISHED);
-                case REJECT_EVENT -> event.setState(State.CANCELED);
+
+        if (onlyAvailable) {
+            booleanBuilder.and(event.participantLimit.eq(0L).or(event.confirmedRequests
+                    .lt(event.participantLimit)));
+        }
+
+        if (sort != null && !sort.isEmpty()) {
+            pageable = createPageable(from, size, Sort.unsorted());
+            if (sort.equals("EVENT_DATE")) {
+                pageable = createPageable(from, size, Sort.by(Sort.Direction.ASC, "eventDate"));
             }
+            if (sort.equals("VIEWS")) {
+                pageable = createPageable(from, size, Sort.by(Sort.Direction.DESC, "views"));
+            }
+        } else {
+            pageable = createPageable(from, size, Sort.unsorted());
         }
-        Optional.ofNullable(updateEventAdminRequest.getTitle()).ifPresent(event::setTitle);
-        return event;
+        log.info("booleanBuilder; {}", booleanBuilder.getValue());
+        if (booleanBuilder.getValue() != null) {
+            eventPage = eventRepository.findAll(booleanBuilder, pageable);
+        } else {
+            eventPage = eventRepository.findAll(pageable);
+        }
+        List<Event> events = eventPage.getContent();
+        return events.stream().map(eventMapper::toEventShortDto).toList();
     }
 
 
@@ -266,7 +324,6 @@ public class EventServiceImpl implements EventService {
         log.debug("Create Pageable with offset from {}, size {}", from, size);
         return PageRequest.of(from / size, size, sort);
     }
-
 
     private Event buildPrivateEventForUpdate(UpdateEventUserRequest updateEventUserRequest, Event event) {
         Optional.ofNullable(updateEventUserRequest.getAnnotation()).ifPresent(event::setAnnotation);
@@ -294,6 +351,35 @@ public class EventServiceImpl implements EventService {
             }
         }
         Optional.ofNullable(updateEventUserRequest.getTitle()).ifPresent(event::setTitle);
+        return event;
+    }
+
+    private Event buildAdminEventForUpdate(UpdateEventAdminRequest updateEventAdminRequest, Event event) {
+        Optional.ofNullable(updateEventAdminRequest.getAnnotation()).ifPresent(event::setAnnotation);
+        if (updateEventAdminRequest.getCategory() != null) {
+            Category category = categoryServiceImpl.getCategoryByIdOrThrow(updateEventAdminRequest.getCategory());
+            event.setCategory(category);
+        }
+        Optional.ofNullable(updateEventAdminRequest.getDescription()).ifPresent(event::setDescription);
+        Optional.ofNullable(updateEventAdminRequest.getEventDate()).ifPresent(event::setEventDate);
+        if (updateEventAdminRequest.getLocation() != null) {
+            Location location = locationMapper.toLocation(updateEventAdminRequest.getLocation());
+            boolean checkExistLocation = locationRepository.existsByLatAndLon(location.getLat(), location.getLon());
+            if (!checkExistLocation) {
+                locationRepository.save(location);
+            }
+            event.setLocation(location);
+        }
+        Optional.ofNullable(updateEventAdminRequest.getPaid()).ifPresent(event::setPaid);
+        Optional.ofNullable(updateEventAdminRequest.getParticipantLimit()).ifPresent(event::setParticipantLimit);
+        Optional.ofNullable(updateEventAdminRequest.getRequestModeration()).ifPresent(event::setRequestModeration);
+        if (updateEventAdminRequest.getStateAction() != null) {
+            switch (updateEventAdminRequest.getStateAction()) {
+                case PUBLISH_EVENT -> event.setState(State.PUBLISHED);
+                case REJECT_EVENT -> event.setState(State.CANCELED);
+            }
+        }
+        Optional.ofNullable(updateEventAdminRequest.getTitle()).ifPresent(event::setTitle);
         return event;
     }
 }

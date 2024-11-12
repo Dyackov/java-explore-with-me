@@ -1,5 +1,6 @@
 package ru.practicum.event.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,7 @@ public class UpdateEventAdminRequest {
     private Long category;
     @Length(min = 20, max = 7000)
     private String description;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
     private LocationDto location;
     private Boolean paid;

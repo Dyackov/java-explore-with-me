@@ -25,16 +25,16 @@ public class AdminEventController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<EventFullDto> getAllEvents(@RequestParam(required = false) List<Long> users,
-                                           @RequestParam(required = false) List<State> states,
-                                           @RequestParam(required = false) List<Long> categories,
-                                           @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-                                           @RequestParam(required = false) LocalDateTime rangeStart,
-                                           @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-                                           @RequestParam(required = false) LocalDateTime rangeEnd,
-                                           @RequestParam(defaultValue = "0") int from,
-                                           @RequestParam(defaultValue = "10") int size,
-                                           HttpServletRequest request) {
+    public List<EventFullDto> getAllEventsAdmin(@RequestParam(required = false) List<Long> users,
+                                                @RequestParam(required = false) List<State> states,
+                                                @RequestParam(required = false) List<Long> categories,
+                                                @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                                                @RequestParam(required = false) LocalDateTime rangeStart,
+                                                @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                                                @RequestParam(required = false) LocalDateTime rangeEnd,
+                                                @RequestParam(defaultValue = "0") int from,
+                                                @RequestParam(defaultValue = "10") int size,
+                                                HttpServletRequest request) {
         logRequestDetails(request);
         log.info("""
                 Admin:Получен запрос на поиск событий:
@@ -43,15 +43,15 @@ public class AdminEventController {
                 Список ID категорий: {}\
                 Дата и время не раньше которых должно произойти событие: {}\
                 Дата и время не позже которых должно произойти событие: {}\
-                 from: {}, size: {}""", users, states, categories, rangeStart, rangeEnd, from, size);
-        return eventServiceImpl.getAllEvents(users, states, categories, rangeStart, rangeEnd, from, size);
+                from: {}, size: {}""", users, states, categories, rangeStart, rangeEnd, from, size);
+        return eventServiceImpl.getAllEventsAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
     @PatchMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
-    public EventFullDto updateEvent(@PathVariable long eventId,
-                                    @RequestBody UpdateEventAdminRequest updateEventAdminRequest,
-                                    HttpServletRequest request) {
+    public EventFullDto updateEventAdmin(@PathVariable long eventId,
+                                         @RequestBody UpdateEventAdminRequest updateEventAdminRequest,
+                                         HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Admin:Получен запрос на обновление события. ID события: {}.\n{}", eventId, updateEventAdminRequest);
         return eventServiceImpl.updateEvent(eventId, updateEventAdminRequest);
