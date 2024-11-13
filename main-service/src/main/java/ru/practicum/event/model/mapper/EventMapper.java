@@ -22,6 +22,7 @@ public interface EventMapper {
 
     EventShortDto toEventShortDto(Event event);
 
+
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     Event partialUpdate(EventShortDto eventShortDto, @MappingTarget Event event);
 
