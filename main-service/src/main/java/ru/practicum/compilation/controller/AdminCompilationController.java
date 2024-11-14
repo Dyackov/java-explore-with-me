@@ -44,7 +44,7 @@ public class AdminCompilationController {
                                                  @RequestBody @Valid UpdateCompilationRequest updateCompilationRequest,
                                                  HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Admin:Получен запрос на обновление подборки. ID подборки: {}\n", compId);
+        log.info("Admin:Получен запрос на обновление подборки. ID подборки: {}\n{}", compId, updateCompilationRequest);
         return compilationServiceImpl.updateCompilationAdmin(compId, updateCompilationRequest);
     }
 

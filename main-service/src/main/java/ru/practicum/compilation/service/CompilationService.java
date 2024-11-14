@@ -17,5 +17,9 @@ public interface CompilationService {
 
     CompilationDto updateCompilationAdmin(long compId, UpdateCompilationRequest updateCompilationRequest);
 
+    CompilationDto getCompilationByIdPublic(long compId);
+
+    List<CompilationDto> getCompilationsPublic(Boolean pinned, int from, int size);
+
     void checkEventExists(List<Event> events, List<Long> actualIds);
 }
