@@ -58,6 +58,7 @@ public class Compilation {
         return "Compilation{" +
                 "\nid=" + id +
                 "\npinned=" + pinned +
-                "\ntitle='" + title + '}';
+                "\ntitle='" + title +
+                "\nevents=" + events + '}';
     }
 }

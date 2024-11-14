@@ -2,6 +2,9 @@ package ru.practicum.compilation.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.compilation.mapper.CompilationMapper;
 import ru.practicum.compilation.model.Compilation;
@@ -58,9 +61,9 @@ public class CompilationServiceImpl implements CompilationService {
     public CompilationDto updateCompilationAdmin(long compId, UpdateCompilationRequest updateCompilationRequest) {
         log.debug("Обновление подборки. ID подборки: {}", compId);
         Compilation compilation = getCompilationByIdOrThrow(compId);
-        if (updateCompilationRequest.getEventIds() != null && !updateCompilationRequest.getEventIds().isEmpty()) {
-            List<Event> events = eventRepository.findAllById(updateCompilationRequest.getEventIds());
-            checkEventExists(events, updateCompilationRequest.getEventIds());
+        if (updateCompilationRequest.getEvents() != null && !updateCompilationRequest.getEvents().isEmpty()) {
+            List<Event> events = eventRepository.findAllById(updateCompilationRequest.getEvents());
+            checkEventExists(events, updateCompilationRequest.getEvents());
             compilation.setEvents(events);
         }
         Optional.ofNullable(updateCompilationRequest.getPinned()).ifPresent(compilation::setPinned);
@@ -68,6 +71,28 @@ public class CompilationServiceImpl implements CompilationService {
         Compilation savedCompilation = compilationRepository.save(compilation);
         log.info("Подборка обновлена\n{}", savedCompilation);
         return compilationMapper.toCompilationDto(savedCompilation);
+    }
+
+    @Override
+    public CompilationDto getCompilationByIdPublic(long compId) {
+        log.debug("Получение подборки. ID подборки: {}", compId);
+        Compilation compilation = getCompilationByIdOrThrow(compId);
+        log.info("Получена подборка\n{}", compilation);
+        return compilationMapper.toCompilationDto(compilation);
+    }
+
+    @Override
+    public List<CompilationDto> getCompilationsPublic(Boolean pinned, int from, int size) {
+        log.debug("Получение подборок. pinned: {}, from: {}, size: {}", pinned, from, size);
+        Pageable pageable = createPageable(from, size, Sort.unsorted());
+        List<Compilation> compilations = compilationRepository.findAllByPinned(pinned, pageable);
+        log.info("Получен список подборок\n{}", compilations);
+        return compilations.stream().map(compilationMapper::toCompilationDto).toList();
+    }
+
+    private Pageable createPageable(int from, int size, Sort sort) {
+        log.debug("Create Pageable with offset from {}, size {}", from, size);
+        return PageRequest.of(from / size, size, sort);
     }
 
     @Override
@@ -82,6 +107,4 @@ public class CompilationServiceImpl implements CompilationService {
             throw new NotFoundException("Отсутствующие ID Событий: " + missingIds);
         }
     }
-
-
 }

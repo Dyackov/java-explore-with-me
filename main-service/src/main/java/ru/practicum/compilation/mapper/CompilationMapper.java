@@ -21,7 +21,7 @@ public interface CompilationMapper {
 
     CompilationDto toCompilationDto(Compilation compilation);
 
-    @Mapping(target = "events", source = "eventIds", qualifiedByName = "mapEventIdsToEventShortDtos")
+    @Mapping(target = "events", source = "events", qualifiedByName = "mapEventIdsToEventShortDtos")
     CompilationDto toCompilationDto(UpdateCompilationRequest updateCompilationRequest);
 
     @Named("mapEventIdsToEventShortDtos")
