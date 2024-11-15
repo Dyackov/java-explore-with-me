@@ -1,13 +1,16 @@
 package ru.practicum.event.service;
 
 import com.querydsl.core.BooleanBuilder;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import ru.practicum.StatisticsClient;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.service.CategoryService;
 import ru.practicum.error.exception.*;
@@ -19,6 +22,8 @@ import ru.practicum.event.model.mapper.EventMapper;
 import ru.practicum.event.model.mapper.LocationMapper;
 import ru.practicum.event.storage.EventRepository;
 import ru.practicum.event.storage.LocationRepository;
+import ru.practicum.model.DtoEndpointHit;
+import ru.practicum.model.DtoViewStats;
 import ru.practicum.request.model.Request;
 import ru.practicum.request.model.dto.ParticipationRequestDto;
 import ru.practicum.request.model.enums.RequestState;
@@ -28,9 +33,8 @@ import ru.practicum.user.model.User;
 import ru.practicum.user.service.UserService;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static ru.practicum.event.model.QEvent.event;
 
@@ -50,19 +54,24 @@ public class EventServiceImpl implements EventService {
     private final LocationMapper locationMapper;
     private final RequestMapper requestMapper;
 
+    @Value("main-service")
+    private String serviceName;
+    private final StatisticsClient statisticsClient;
+
     @Override
     public List<EventShortDto> getEventsByUserIdPrivate(long userId, int from, int size) {
-        log.debug("Получение всех событий. ID пользователя:{}, from:{}, size:{}", userId, from, size);
+        log.debug("Private:Получение всех событий. ID пользователя:{}, from:{}, size:{}", userId, from, size);
         userServiceImpl.getUserByIdOrThrow(userId);
         Pageable pageable = createPageable(from, size, Sort.by(Sort.Direction.ASC, "createdOn"));
         List<Event> events = eventRepository.findAll(pageable).getContent();
-        log.info("Получен список всех событий. ID пользователя:\n{}", events);
+        setViews(events);
+        log.info("Private:Получен список всех событий. ID пользователя:\n{}", events);
         return events.stream().map(eventMapper::toEventShortDto).toList();
     }
 
     @Override
     public EventFullDto createEventPrivate(long userId, NewEventDto newEventDto) {
-        log.debug("Создание события: {}", newEventDto);
+        log.debug("Private:Создание события: {}", newEventDto);
         if (newEventDto.getEventDate().isBefore(LocalDateTime.now())) {
             throw new DataTimeException("Дата и время на которые намечено событие не может быть в прошлом");
         } else if (newEventDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
@@ -83,17 +92,18 @@ public class EventServiceImpl implements EventService {
         event.setState(State.PENDING);
         event.setViews(0L);
         Event savedEvent = eventRepository.save(event);
-        log.info("Создано событие:\n{}", savedEvent);
+        log.info("Private:Создано событие:\n{}", savedEvent);
 
         return eventMapper.toEventFullDto(savedEvent);
     }
 
     @Override
     public EventFullDto getEventByIdPrivate(long userId, long eventId) {
-        log.debug("Получение события, ID пользователя: {}, ID события:{}", userId, eventId);
+        log.debug("Private:Получение события, ID пользователя: {}, ID события:{}", userId, eventId);
         getEventByIdOrThrow(eventId);
         Event event = getEventAndCheckAuthorization(userId, eventId);
-        log.info("Получено событие:\n{}", event);
+        setViews(List.of(event));
+        log.info("Private:Получено событие:\n{}", event);
         return eventMapper.toEventFullDto(event);
     }
 
@@ -116,24 +126,25 @@ public class EventServiceImpl implements EventService {
         }
         Event builderEvent = buildPrivateEventForUpdate(updateEventUserRequest, event);
         Event savedEvent = eventRepository.save(builderEvent);
+        setViews(List.of(savedEvent));
         log.info("Событие обновлено:\n{}", savedEvent);
         return eventMapper.toEventFullDto(savedEvent);
     }
 
     @Override
     public List<ParticipationRequestDto> getParticipationRequestsForUserEventsPrivate(long userId, long eventId) {
-        log.debug("Получение запросов на участие в событии. ID пользователя: {}, ID события :{}", userId, eventId);
+        log.debug("Private:Получение запросов на участие в событии. ID пользователя: {}, ID события :{}", userId, eventId);
         userServiceImpl.getUserByIdOrThrow(userId);
         getEventAndCheckAuthorization(userId, eventId);
         List<Request> requests = requestRepository.findByEventId(eventId);
-        log.info("Получен список запросов на участие.\n{}", requests);
+        log.info("Private:Получен список запросов на участие.\n{}", requests);
         return requests.stream().map(requestMapper::toParticipationRequestDto).toList();
     }
 
     @Override
     public EventRequestStatusUpdateResult updateRequestStatusPrivate(long userId, long eventId,
                                                                      EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
-        log.info("Изменение статуса (подтверждена, отменена) заявок на участие в событии. " +
+        log.debug("Private:Изменение статуса (подтверждена, отменена) заявок на участие в событии. " +
                 "ID пользователя: {}, ID события :{}", userId, eventId);
         userServiceImpl.getUserByIdOrThrow(userId);
         Event event = getEventAndCheckAuthorization(userId, eventId);
@@ -152,7 +163,7 @@ public class EventServiceImpl implements EventService {
         }
 
         List<Request> requests = requestRepository.findAllById(eventRequestStatusUpdateRequest.getRequestIds());
-        log.info("Заявки для изменения статуса:\n{}", requests);
+        log.info("Private:Заявки для изменения статуса:\n{}", requests);
 
         List<Request> confirmedRequests = new ArrayList<>();
         List<Request> rejectedRequests = new ArrayList<>();
@@ -161,10 +172,12 @@ public class EventServiceImpl implements EventService {
             if (request.getStatus() != RequestState.PENDING) {
                 throw new ValidationException("Статус можно изменить только у заявок, находящихся в состоянии ожидания");
             }
-            if (event.getConfirmedRequests() < event.getParticipantLimit()) {
-                request.setStatus(RequestState.CONFIRMED);
-                confirmedRequests.add(request);
-                event.setConfirmedRequests(event.getConfirmedRequests() + 1);
+            if (eventRequestStatusUpdateRequest.getStatus() == RequestState.CONFIRMED) {
+                if (event.getConfirmedRequests() < event.getParticipantLimit()) {
+                    request.setStatus(RequestState.CONFIRMED);
+                    confirmedRequests.add(request);
+                    event.setConfirmedRequests(event.getConfirmedRequests() + 1);
+                }
             } else {
                 request.setStatus(RequestState.REJECTED);
                 rejectedRequests.add(request);
@@ -178,7 +191,7 @@ public class EventServiceImpl implements EventService {
                 .confirmedRequests(confirmedRequests.stream().map(requestMapper::toParticipationRequestDto).toList())
                 .rejectedRequests(rejectedRequests.stream().map(requestMapper::toParticipationRequestDto).toList())
                 .build();
-        log.info("Статусы изменены заявок на участие изменены.\n{}", eventRequestStatusUpdateResult);
+        log.info("Private:Статусы изменены заявок на участие изменены.\n{}", eventRequestStatusUpdateResult);
         return eventRequestStatusUpdateResult;
     }
 
@@ -186,22 +199,43 @@ public class EventServiceImpl implements EventService {
     public List<EventFullDto> getAllEventsAdmin(List<Long> users, List<State> states, List<Long> categories,
                                                 LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
         log.debug("""
-                Получение списка по поиску событий:
-                Список ID пользователей: {}\
-                Список состояний: {}\
-                Список ID категорий: {}\
-                Дата и время не раньше которых должно произойти событие: {}\
-                Дата и время не позже которых должно произойти событие: {}\
+                Admin:Получение списка по поиску событий:
+                Список ID пользователей: {}
+                Список состояний: {}
+                Список ID категорий: {}
+                Дата и время не раньше которых должно произойти событие: {}
+                Дата и время не позже которых должно произойти событие: {}
                  from: {}, size: {}""", users, states, categories, rangeStart, rangeEnd, from, size);
         Pageable pageable = createPageable(from, size, Sort.by(Sort.Direction.ASC, "createdOn"));
-        List<Event> events = eventRepository.findEvents(users, states, categories, rangeStart, rangeEnd, pageable);
-        log.info("Получен список по поиску событий.\n{}", events);
+        Page<Event> eventPage;
+        BooleanBuilder booleanBuilder = new BooleanBuilder();
+
+        if (users != null && !users.isEmpty()) {
+            booleanBuilder.and(event.initiator.id.in(users));
+        }
+        if (states != null && !states.isEmpty()) {
+            booleanBuilder.and(event.state.in(states));
+        }
+        if (categories != null && !categories.isEmpty()) {
+            booleanBuilder.and(event.category.id.in(categories));
+        }
+
+        checkTime(rangeStart, rangeEnd, booleanBuilder);
+
+        if (booleanBuilder.getValue() != null) {
+            eventPage = eventRepository.findAll(booleanBuilder, pageable);
+        } else {
+            eventPage = eventRepository.findAll(pageable);
+        }
+        List<Event> events = eventPage.getContent();
+        setViews(events);
+        log.info("Admin:Получен список по поиску событий.\n{}", events);
         return events.stream().map(eventMapper::toEventFullDto).toList();
     }
 
     @Override
     public EventFullDto updateEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
-        log.debug("admin Обновление события ID: {}\n{}", eventId, updateEventAdminRequest);
+        log.debug("Admin:Обновление события ID: {}\n{}", eventId, updateEventAdminRequest);
         Event event = getEventByIdOrThrow(eventId);
         if (updateEventAdminRequest.getEventDate() != null) {
             if (updateEventAdminRequest.getEventDate().isBefore(event.getPublishedOn().plusHours(1))) {
@@ -212,27 +246,35 @@ public class EventServiceImpl implements EventService {
         if (event.getState() == State.PUBLISHED) {
             throw new ValidationException("Событие уже опубликовано");
         }
+        if (event.getState() == State.CANCELED) {
+            throw new ValidationException("Нельзя опубликовать отменённое событие");
+        }
         Event builderEvent = buildAdminEventForUpdate(updateEventAdminRequest, event);
+        setViews(List.of(builderEvent));
         Event savedEvent = eventRepository.save(builderEvent);
         log.info("Событие обновлено :\n{}", savedEvent);
         return eventMapper.toEventFullDto(savedEvent);
     }
 
     @Override
-    public EventFullDto getEventByIdPublic(int id) {
-        log.debug("Получение события, ID события:{}", id);
+    public EventFullDto getEventByIdPublic(int id, HttpServletRequest request) {
+        log.debug("Public:Получение события, ID события:{}", id);
         Event event = getEventByIdOrThrow(id);
 
         if (event.getState() != State.PUBLISHED) {
             throw new NotFoundException("Событие не найдено.");
         }
-        log.info("Получено событие :\n{}", event);
+        createHit(request);
+        setViews(List.of(event));
+        log.info("Public:Получено событие :\n{}", event);
         return eventMapper.toEventFullDto(event);
     }
 
+
     @Override
     public List<EventShortDto> getAllEventsPublic(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
-                                                  LocalDateTime rangeEnd, Boolean onlyAvailable, String sort, int from, int size) {
+                                                  LocalDateTime rangeEnd, Boolean onlyAvailable, String sort,
+                                                  int from, int size, HttpServletRequest request) {
         log.debug("""
                 Public:Получение событии с фильтрацией.
                 Текст для поиска: {}
@@ -245,7 +287,6 @@ public class EventServiceImpl implements EventService {
                 Количество событий, которые нужно пропустить: {}
                 Количество событий в наборе: {}
                 """, text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
-
         Page<Event> eventPage;
         Pageable pageable;
 
@@ -264,16 +305,7 @@ public class EventServiceImpl implements EventService {
             booleanBuilder.and(event.paid.eq(paid));
         }
 
-        if (rangeStart != null && rangeEnd != null) {
-            if (rangeStart.isAfter(rangeEnd)) {
-                throw new DataTimeException("Время начала должно быть не позже времени окончания.");
-            }
-            booleanBuilder.and(event.eventDate.between(rangeStart, rangeEnd));
-        } else if (rangeStart == null && rangeEnd != null) {
-            booleanBuilder.and(event.eventDate.before(rangeEnd));
-        } else if (rangeStart != null) {
-            booleanBuilder.and(event.eventDate.after(rangeStart));
-        }
+        checkTime(rangeStart, rangeEnd, booleanBuilder);
 
         if (onlyAvailable) {
             booleanBuilder.and(event.participantLimit.eq(0L).or(event.confirmedRequests
@@ -292,15 +324,18 @@ public class EventServiceImpl implements EventService {
             pageable = createPageable(from, size, Sort.unsorted());
         }
         log.info("booleanBuilder; {}", booleanBuilder.getValue());
+
         if (booleanBuilder.getValue() != null) {
             eventPage = eventRepository.findAll(booleanBuilder, pageable);
         } else {
             eventPage = eventRepository.findAll(pageable);
         }
         List<Event> events = eventPage.getContent();
+        createHit(request);
+        setViews(events);
+        log.info("Public:Получены события :\n{}", events);
         return events.stream().map(eventMapper::toEventShortDto).toList();
     }
-
 
     @Override
     public Event getEventByIdOrThrow(long eventId) {
@@ -354,14 +389,19 @@ public class EventServiceImpl implements EventService {
         return event;
     }
 
+
     private Event buildAdminEventForUpdate(UpdateEventAdminRequest updateEventAdminRequest, Event event) {
         Optional.ofNullable(updateEventAdminRequest.getAnnotation()).ifPresent(event::setAnnotation);
+        log.debug("Обновлено поле annotation: {}", updateEventAdminRequest.getAnnotation());
         if (updateEventAdminRequest.getCategory() != null) {
             Category category = categoryServiceImpl.getCategoryByIdOrThrow(updateEventAdminRequest.getCategory());
             event.setCategory(category);
+            log.debug("Обновлено поле category: {}", updateEventAdminRequest.getCategory());
         }
         Optional.ofNullable(updateEventAdminRequest.getDescription()).ifPresent(event::setDescription);
+        log.debug("Обновлено поле description: {}", updateEventAdminRequest.getDescription());
         Optional.ofNullable(updateEventAdminRequest.getEventDate()).ifPresent(event::setEventDate);
+        log.debug("Обновлено поле eventDate: {}", updateEventAdminRequest.getEventDate());
         if (updateEventAdminRequest.getLocation() != null) {
             Location location = locationMapper.toLocation(updateEventAdminRequest.getLocation());
             boolean checkExistLocation = locationRepository.existsByLatAndLon(location.getLat(), location.getLon());
@@ -369,6 +409,7 @@ public class EventServiceImpl implements EventService {
                 locationRepository.save(location);
             }
             event.setLocation(location);
+            log.debug("Обновлено поле location: {}", updateEventAdminRequest.getLocation());
         }
         Optional.ofNullable(updateEventAdminRequest.getPaid()).ifPresent(event::setPaid);
         Optional.ofNullable(updateEventAdminRequest.getParticipantLimit()).ifPresent(event::setParticipantLimit);
@@ -382,6 +423,55 @@ public class EventServiceImpl implements EventService {
         Optional.ofNullable(updateEventAdminRequest.getTitle()).ifPresent(event::setTitle);
         return event;
     }
+
+    private void checkTime(LocalDateTime rangeStart, LocalDateTime rangeEnd, BooleanBuilder booleanBuilder) {
+        if (rangeStart != null && rangeEnd != null) {
+            if (rangeStart.isAfter(rangeEnd)) {
+                throw new DataTimeException("Время начала должно быть не позже времени окончания.");
+            }
+            booleanBuilder.and(event.eventDate.between(rangeStart, rangeEnd));
+        } else if (rangeStart == null && rangeEnd != null) {
+            booleanBuilder.and(event.eventDate.before(rangeEnd));
+        } else if (rangeStart != null) {
+            booleanBuilder.and(event.eventDate.after(rangeStart));
+        }
+    }
+
+    private void createHit(HttpServletRequest request) {
+        DtoEndpointHit dtoEndpointHit = DtoEndpointHit.builder()
+                .app(serviceName)
+                .uri(request.getRequestURI())
+                .ip(request.getRemoteAddr())
+                .timestamp(LocalDateTime.now())
+                .build();
+        log.info("dtoEndpointHit: {}", dtoEndpointHit);
+        statisticsClient.createHit(dtoEndpointHit);
+    }
+
+    private List<DtoViewStats> getStats(List<Event> events) {
+        List<String> uris = events.stream().map(event -> "/events/" + event.getId()).toList();
+        log.info("uris: {}", uris);
+        LocalDateTime start = LocalDateTime.now().minusYears(50);
+        LocalDateTime end = LocalDateTime.now();
+        List<DtoViewStats> stats = statisticsClient.getStats(start, end, uris, true);
+        log.info("stats: {}", stats);
+        if (stats.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return stats;
+    }
+
+    private void setViews(List<Event> events) {
+        log.info("events: {}", events);
+        if (events.isEmpty()) {
+            return;
+        }
+        Map<String, Long> mapUriAndHits = getStats(events).stream()
+                .collect(Collectors.toMap(DtoViewStats::getUri, DtoViewStats::getHits));
+        log.info("mapUriAndHits: {}", mapUriAndHits);
+
+        for (Event event : events) {
+            event.setViews(mapUriAndHits.getOrDefault("/events/" + event.getId(), 0L));
+        }
+    }
 }
-
-

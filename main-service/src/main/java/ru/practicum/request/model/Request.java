@@ -41,7 +41,11 @@ public class Request {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Request request = (Request) o;
-        return Objects.equals(id, request.id) && Objects.equals(created, request.created) && Objects.equals(event, request.event) && Objects.equals(requester, request.requester) && status == request.status;
+        return Objects.equals(id, request.id) &&
+                Objects.equals(created, request.created) &&
+                Objects.equals(event, request.event) &&
+                Objects.equals(requester, request.requester) &&
+                status == request.status;
     }
 
     @Override

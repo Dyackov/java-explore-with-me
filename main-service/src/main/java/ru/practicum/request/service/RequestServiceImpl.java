@@ -29,19 +29,18 @@ public class RequestServiceImpl implements RequestService {
     private final EventService eventServiceImpl;
     private final RequestMapper requestMapper;
 
-
     @Override
-    public List<ParticipationRequestDto> getRequests(Long userId) {
-        log.debug("Получение списка запросов на участие. Пользователь ID: {}", userId);
+    public List<ParticipationRequestDto> getRequestsPrivate(Long userId) {
+        log.debug("Private:Получение списка запросов на участие. Пользователь ID: {}", userId);
         userServiceImpl.getUserByIdOrThrow(userId);
         List<Request> requests = requestRepository.findByRequesterId(userId);
-        log.info("Получен список запросов на участие:\n{}", requests);
+        log.info("Private:Получен список запросов на участие:\n{}", requests);
         return requests.stream().map(requestMapper::toParticipationRequestDto).toList();
     }
 
     @Override
-    public ParticipationRequestDto createRequest(long userId, long eventId) {
-        log.debug("Создание запроса на участие. Пользователь ID: {}, Событие ID: {}", userId, eventId);
+    public ParticipationRequestDto createRequestPrivate(long userId, long eventId) {
+        log.debug("Private:Создание запроса на участие. Пользователь ID: {}, Событие ID: {}", userId, eventId);
         User user = userServiceImpl.getUserByIdOrThrow(userId);
         Event event = eventServiceImpl.getEventByIdOrThrow(eventId);
         if (requestRepository.existsByRequesterIdAndEventId(userId, eventId)) {
@@ -55,7 +54,7 @@ public class RequestServiceImpl implements RequestService {
         if (event.getState() != State.PUBLISHED) {
             throw new ValidateRequestException("Нельзя участвовать в неопубликованном событии");
         }
-        if (event.getConfirmedRequests().equals(event.getParticipantLimit())) {
+        if (event.getConfirmedRequests() > 0 && event.getConfirmedRequests().equals(event.getParticipantLimit())) {
             throw new ValidateRequestException("У события достигнут лимит запросов на участие");
         }
 
@@ -64,20 +63,20 @@ public class RequestServiceImpl implements RequestService {
                 .event(event)
                 .requester(user)
                 .build();
-        if (event.getRequestModeration().equals(false)) {
+        if (event.getRequestModeration().equals(false) || event.getParticipantLimit() == 0) {
             request.setStatus(RequestState.CONFIRMED);
             event.setConfirmedRequests(+1L);
         } else {
             request.setStatus(RequestState.PENDING);
         }
         Request savedRequest = requestRepository.save(request);
-        log.info("Создан запрос на участие:\n{}", savedRequest);
+        log.info("Private:Создан запрос на участие:\n{}", savedRequest);
         return requestMapper.toParticipationRequestDto(savedRequest);
     }
 
     @Override
-    public ParticipationRequestDto updateRequest(long userId, long requestId) {
-        log.debug("Обновление запроса на участие. Пользователь ID: {}, Запрос на участие ID: {}", userId, requestId);
+    public ParticipationRequestDto updateRequestPrivate(long userId, long requestId) {
+        log.debug("Private:Обновление запроса на участие. Пользователь ID: {}, Запрос на участие ID: {}", userId, requestId);
         userServiceImpl.getUserByIdOrThrow(userId);
         Request request = getRequestByIdOrThrow(requestId);
         if (userId != request.getRequester().getId()) {
@@ -85,7 +84,7 @@ public class RequestServiceImpl implements RequestService {
         }
         request.setStatus(RequestState.CANCELED);
         Request savedRequest = requestRepository.save(request);
-        log.info("Запрос на участие обновлён:\n{}", savedRequest);
+        log.info("Private:Запрос на участие обновлён:\n{}", savedRequest);
         return requestMapper.toParticipationRequestDto(savedRequest);
     }
 
@@ -94,5 +93,4 @@ public class RequestServiceImpl implements RequestService {
         return requestRepository.findById(requestId).orElseThrow(() -> new NotFoundException(
                 "Request with id = " + requestId + " was not found"));
     }
-
 }

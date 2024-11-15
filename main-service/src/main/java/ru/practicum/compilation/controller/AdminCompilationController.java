@@ -22,7 +22,7 @@ public class AdminCompilationController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CompilationDto createCompilationAdmin(@RequestBody NewCompilationDto newCompilationDto,
+    public CompilationDto createCompilationAdmin(@RequestBody @Valid NewCompilationDto newCompilationDto,
                                                  HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Admin:Получен запрос на добавление новой подборки.\n{}", newCompilationDto);
@@ -47,7 +47,6 @@ public class AdminCompilationController {
         log.info("Admin:Получен запрос на обновление подборки. ID подборки: {}\n{}", compId, updateCompilationRequest);
         return compilationServiceImpl.updateCompilationAdmin(compId, updateCompilationRequest);
     }
-
 
     private void logRequestDetails(HttpServletRequest request) {
         String method = request.getMethod();

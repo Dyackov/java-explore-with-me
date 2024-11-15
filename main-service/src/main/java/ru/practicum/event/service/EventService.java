@@ -1,5 +1,6 @@
 package ru.practicum.event.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.dto.*;
 import ru.practicum.event.model.enums.State;
@@ -20,7 +21,8 @@ public interface EventService {
 
     List<ParticipationRequestDto> getParticipationRequestsForUserEventsPrivate(long userId, long eventId);
 
-    EventRequestStatusUpdateResult updateRequestStatusPrivate(long userId, long eventId, EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest);
+    EventRequestStatusUpdateResult updateRequestStatusPrivate(long userId, long eventId,
+                                                              EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest);
 
     List<EventFullDto> getAllEventsAdmin(List<Long> users,
                                          List<State> states,
@@ -32,10 +34,11 @@ public interface EventService {
 
     EventFullDto updateEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest);
 
-    EventFullDto getEventByIdPublic(int id);
+    EventFullDto getEventByIdPublic(int id, HttpServletRequest request);
 
     List<EventShortDto> getAllEventsPublic(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
-                                           LocalDateTime rangeEnd, Boolean onlyAvailable, String sort, int from, int size);
+                                           LocalDateTime rangeEnd, Boolean onlyAvailable, String sort,
+                                           int from, int size, HttpServletRequest request);
 
     Event getEventByIdOrThrow(long eventId);
 

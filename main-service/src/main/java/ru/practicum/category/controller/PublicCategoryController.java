@@ -22,8 +22,8 @@ public class PublicCategoryController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<CategoryDto> getCategoriesPublic(@RequestParam int from,
-                                                 @RequestParam int size,
+    public List<CategoryDto> getCategoriesPublic(@RequestParam(defaultValue = "0") int from,
+                                                 @RequestParam(defaultValue = "10") int size,
                                                  HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Public:Получен запрос на получение категорий. from: {}, size: {}", from, size);

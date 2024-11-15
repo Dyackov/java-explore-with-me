@@ -35,8 +35,7 @@ public class NewEventDto {
     @NotNull
     LocationDto location;
 
-    @NotNull
-    Boolean paid;
+    Boolean paid = Boolean.FALSE;
 
     @PositiveOrZero
     Long participantLimit = 0L;

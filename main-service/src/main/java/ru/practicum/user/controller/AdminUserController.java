@@ -23,32 +23,32 @@ public class AdminUserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto createUser(@RequestBody @Valid NewUserRequest newUserRequest,
+    public UserDto createUserAdmin(@RequestBody @Valid NewUserRequest newUserRequest,
                               HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на создание пользователя:\n{}", newUserRequest);
-        return userServiceImpl.createUser(newUserRequest);
+        log.info("Admin:Получен запрос на создание пользователя:\n{}", newUserRequest);
+        return userServiceImpl.createUserAdmin(newUserRequest);
     }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<UserDto> getUsers(@RequestParam(required = false) List<Integer> ids,
-                                  @RequestParam(defaultValue = "0") int from,
-                                  @RequestParam(defaultValue = "10") int size,
-                                  HttpServletRequest request) {
+    public List<UserDto> getUsersAdmin(@RequestParam(required = false) List<Integer> ids,
+                                       @RequestParam(defaultValue = "0") int from,
+                                       @RequestParam(defaultValue = "10") int size,
+                                       HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Получен запрос на получение информации о пользователях:\nid пользователей:{}, from:{}, size:{}",
                 ids, from, size);
-        return userServiceImpl.getUsers(ids, from, size);
+        return userServiceImpl.getUsersAdmin(ids, from, size);
     }
 
     @DeleteMapping("/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUserById(@PathVariable long userId,
-                               HttpServletRequest request) {
+    public void deleteUserByIdAdmin(@PathVariable long userId,
+                                    HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Получен запрос на удаление пользователя id: {}", userId);
-        userServiceImpl.deleteUserById(userId);
+        log.info("Admin:Получен запрос на удаление пользователя id: {}", userId);
+        userServiceImpl.deleteUserByIdAdmin(userId);
     }
 
     private void logRequestDetails(HttpServletRequest request) {

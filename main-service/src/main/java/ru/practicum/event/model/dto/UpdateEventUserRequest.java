@@ -37,6 +37,6 @@ public class UpdateEventUserRequest {
 
     StateAction stateAction;
 
-    @Length(max = 120)
+    @Length(min = 3, max = 120)
     String title;
 }

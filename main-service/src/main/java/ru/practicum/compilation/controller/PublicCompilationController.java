@@ -31,9 +31,9 @@ public class PublicCompilationController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<CompilationDto> getCompilationsPublic(@RequestParam(required = false) Boolean pinned,
-                                                      @RequestParam(defaultValue = "0", required = false) int from,
-                                                      @RequestParam(defaultValue = "10", required = false) int size,
+    public List<CompilationDto> getCompilationsPublic(@RequestParam(defaultValue = "false") Boolean pinned,
+                                                      @RequestParam(defaultValue = "0") int from,
+                                                      @RequestParam(defaultValue = "10") int size,
                                                       HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Public:Получен запрос на получение подборок. Закреп/Не закреп: {}, from: {}, size: {}",

@@ -7,11 +7,11 @@ import ru.practicum.user.model.dto.UserDto;
 import java.util.List;
 
 public interface UserService {
-    UserDto createUser(NewUserRequest newUserRequest);
+    UserDto createUserAdmin(NewUserRequest newUserRequest);
 
-    List<UserDto> getUsers(List<Integer> ids, int from, int size);
+    List<UserDto> getUsersAdmin(List<Integer> ids, int from, int size);
 
-    void deleteUserById(long userId);
+    void deleteUserByIdAdmin(long userId);
 
     User getUserByIdOrThrow(long userId);
 }

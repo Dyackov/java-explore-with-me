@@ -21,34 +21,34 @@ public class PrivateRequestForParticipationController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<ParticipationRequestDto> getRequests(@PathVariable Long userId,
-                                                     HttpServletRequest request) {
+    public List<ParticipationRequestDto> getRequestsPrivate(@PathVariable Long userId,
+                                                            HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Private:Получен запрос на получение заявок на участие в событиях. Пользователь ID: {}", userId);
-        return requestServiceImpl.getRequests(userId);
+        return requestServiceImpl.getRequestsPrivate(userId);
 
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.OK)
-    public ParticipationRequestDto createRequest(@PathVariable long userId,
-                                                 @RequestParam long eventId,
-                                                 HttpServletRequest request) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ParticipationRequestDto createRequestPrivate(@PathVariable long userId,
+                                                        @RequestParam long eventId,
+                                                        HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Private:Получен запрос на создание заявки на участие в событии. Пользователь ID: {}, Событие ID: {}",
                 userId, eventId);
-        return requestServiceImpl.createRequest(userId, eventId);
+        return requestServiceImpl.createRequestPrivate(userId, eventId);
     }
 
     @PatchMapping("/{requestId}/cancel")
     @ResponseStatus(HttpStatus.OK)
-    public ParticipationRequestDto updateRequest(@PathVariable long userId,
-                                                 @PathVariable long requestId,
-                                                 HttpServletRequest request) {
+    public ParticipationRequestDto updateRequestPrivate(@PathVariable long userId,
+                                                        @PathVariable long requestId,
+                                                        HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Private:Получен запрос на обновление(отмену) собственной заявки на участие в событии. " +
                 "Пользователь ID: {}, Запрос ID: {}", userId, requestId);
-        return requestServiceImpl.updateRequest(userId, requestId);
+        return requestServiceImpl.updateRequestPrivate(userId, requestId);
     }
 
     private void logRequestDetails(HttpServletRequest request) {

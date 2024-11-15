@@ -28,49 +28,49 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDto createCategoryAdmin(NewCategoryDto newCategoryDto) {
-        log.debug("Создание категории:\n{}", newCategoryDto);
+        log.debug("Admin:Создание категории:\n{}", newCategoryDto);
         Category category = categoryMapper.toCategory(newCategoryDto);
         Category resultCategory = categoryRepository.save(category);
-        log.info("Создана категория:\n{}", resultCategory);
+        log.info("Admin:Создана категория:\n{}", resultCategory);
         return categoryMapper.toCategoryDto(resultCategory);
     }
 
     @Override
     public void deleteCategoryByIdAdmin(long catId) {
-        log.debug("Удаление категории id: {}", catId);
+        log.debug("Admin:Удаление категории id: {}", catId);
         getCategoryByIdOrThrow(catId);
         if (!eventRepository.findAllByCategoryId(catId).isEmpty()) {
             throw new IntegrityViolationException("Удаление категории невозможно. С категорией ID:" +
                     catId + " связаны события(е).");
         }
         categoryRepository.deleteById(catId);
-        log.info("Категория с id: {} , удалёна", catId);
+        log.info("Admin:Категория с id: {} , удалёна", catId);
     }
 
     @Override
     public CategoryDto updateCategoryByIdAdmin(long catId, NewCategoryDto newCategoryDto) {
-        log.debug("Обновление категории id: {}", catId);
+        log.debug("Admin:Обновление категории id: {}", catId);
         Category category = getCategoryByIdOrThrow(catId);
         category.setName(newCategoryDto.getName());
         Category updatedCategory = categoryRepository.save(category);
-        log.info("Обновлена категория:\n{}", updatedCategory);
+        log.info("Admin:Обновлена категория:\n{}", updatedCategory);
         return categoryMapper.toCategoryDto(category);
     }
 
     @Override
     public CategoryDto getCategoryByIdPublic(long catId) {
-        log.debug("Получение категории Id: {}", catId);
+        log.debug("Public:Получение категории Id: {}", catId);
         Category category = getCategoryByIdOrThrow(catId);
-        log.info("Получена категория:\n{}", category);
+        log.info("Public:Получена категория:\n{}", category);
         return categoryMapper.toCategoryDto(category);
     }
 
     @Override
     public List<CategoryDto> getCategoriesPublic(int from, int size) {
-        log.debug("Получение категорий.");
+        log.debug("Public:олучение категорий.");
         Pageable pageable = createPageable(from, size, Sort.by(Sort.Direction.ASC, "id"));
         List<Category> categories = categoryRepository.findAll(pageable).getContent();
-        log.info("Получен список категорий:\n{}", categories);
+        log.info("Public:Получен список категорий:\n{}", categories);
         return categories.stream().map(categoryMapper::toCategoryDto).toList();
     }
 

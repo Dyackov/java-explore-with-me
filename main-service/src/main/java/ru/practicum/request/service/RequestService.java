@@ -8,11 +8,11 @@ import java.util.List;
 
 public interface RequestService {
 
-    List<ParticipationRequestDto> getRequests(@PathVariable Long userId);
+    List<ParticipationRequestDto> getRequestsPrivate(@PathVariable Long userId);
 
-    ParticipationRequestDto createRequest(long userId, long eventId);
+    ParticipationRequestDto createRequestPrivate(long userId, long eventId);
 
-    ParticipationRequestDto updateRequest(long userId, long requestId);
+    ParticipationRequestDto updateRequestPrivate(long userId, long requestId);
 
     Request getRequestByIdOrThrow(long requestId);
 }

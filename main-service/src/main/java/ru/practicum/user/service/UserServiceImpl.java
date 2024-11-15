@@ -24,17 +24,17 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDto createUser(NewUserRequest newUserRequest) {
-        log.debug("Создание пользователя: {}", newUserRequest);
+    public UserDto createUserAdmin(NewUserRequest newUserRequest) {
+        log.debug("Admin:Создание пользователя: {}", newUserRequest);
         User user = userMapper.toUser(newUserRequest);
         User resultUser = userRepository.save(user);
-        log.info("Создан пользователь:\n{}", resultUser);
+        log.info("Admin:Создан пользователь:\n{}", resultUser);
         return userMapper.toUserDto(resultUser);
     }
 
     @Override
-    public List<UserDto> getUsers(List<Integer> ids, int from, int size) {
-        log.debug("Получение пользователей id: {}", ids);
+    public List<UserDto> getUsersAdmin(List<Integer> ids, int from, int size) {
+        log.debug("Admin:Получение пользователей id: {}", ids);
         List<User> users;
         Pageable pageable = PageRequest.of(from / size, size, Sort.by(Sort.Direction.ASC, "id"));
         if (ids == null || ids.isEmpty()) {
@@ -43,16 +43,16 @@ public class UserServiceImpl implements UserService {
             users = userRepository.findByIdIn(ids, pageable);
         }
         List<UserDto> result = userMapper.toUsersDto(users);
-        log.info("Получен список пользователей:\n{}", result);
+        log.info("Admin:Получен список пользователей:\n{}", result);
         return result;
     }
 
     @Override
-    public void deleteUserById(long userId) {
-        log.debug("Удаление пользователя id: {}", userId);
+    public void deleteUserByIdAdmin(long userId) {
+        log.debug("Admin:Удаление пользователя id: {}", userId);
         getUserByIdOrThrow(userId);
         userRepository.deleteById(userId);
-        log.info("Пользователь с id: {} , удалён", userId);
+        log.info("Admin:Пользователь с id: {} , удалён", userId);
     }
 
     @Override
@@ -60,6 +60,4 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(userId).orElseThrow(() -> new NotFoundException(
                 "User with id = " + userId + " not found"));
     }
-
-
 }

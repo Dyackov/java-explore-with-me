@@ -1,10 +1,12 @@
 package ru.practicum.compilation.model.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
+import org.hibernate.validator.constraints.UniqueElements;
 
 import java.util.List;
 
@@ -13,13 +15,13 @@ import java.util.List;
 @NoArgsConstructor
 public class NewCompilationDto {
 
-    @NotNull
+    @UniqueElements
     private List<Long> events;
 
     @NotNull
-    Boolean pinned;
+    private Boolean pinned = Boolean.FALSE;
 
-    @NotNull
+    @NotBlank
     @Length(min = 1, max = 50)
-    String title;
+    private String title;
 }

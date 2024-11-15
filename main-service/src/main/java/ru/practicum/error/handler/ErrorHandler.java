@@ -37,11 +37,15 @@ public class ErrorHandler {
     public ResponseEntity<ApiError> handle(final Exception e) {
         log.warn(e.getMessage());
 
-        HttpStatus status = HttpStatus.NO_CONTENT;
-        String reason = "Некорректный запрос.";
+        HttpStatus status;
+        String reason;
         String message = e.getMessage();
 
         switch (e) {
+            case ValidationException ex -> {
+                status = HttpStatus.CONFLICT;
+                reason = "Событие не удовлетворяет правилам редактирования.";
+            }
             case MethodArgumentNotValidException ex -> {
                 status = HttpStatus.BAD_REQUEST;
                 reason = "Запрос составлен некорректно.";
@@ -51,11 +55,11 @@ public class ErrorHandler {
                 reason = "Требуемый параметр отсутствует.";
                 message = String.format("Required parameter is missing: %s", ex.getParameterName());
             }
-            case DataIntegrityViolationException exData -> {
+            case DataIntegrityViolationException ex -> {
                 status = HttpStatus.CONFLICT;
                 reason = "Ограничение целостности нарушено.";
             }
-            case IntegrityViolationException exIntegrity -> {
+            case IntegrityViolationException ex -> {
                 status = HttpStatus.CONFLICT;
                 reason = "Ограничение целостности нарушено.";
             }
@@ -64,20 +68,15 @@ public class ErrorHandler {
                 reason = "Искомый объект не найден.";
             }
             case DataTimeException ex -> {
-                if (ex.getMessage().contains("раньше, чем через два часа")) {
-                    status = HttpStatus.BAD_REQUEST;
-                    reason = "Неправильно составлен запрос с датой и временем";
-                } else if (ex.getMessage().contains("не может быть в прошлом")) {
-                    status = HttpStatus.FORBIDDEN;
-                    reason = "Для запрошенной операции условия не выполнены.";
-                }
+                status = HttpStatus.BAD_REQUEST;
+                reason = "Неправильно составлен запрос с датой и временем";
             }
             case AuthorizationException ex -> {
                 status = HttpStatus.UNAUTHORIZED;
                 reason = "Не пройдена авторизация для запрошенной операции.";
             }
             case StateValidateException ex -> {
-                status = HttpStatus.FORBIDDEN;
+                status = HttpStatus.CONFLICT;
                 reason = "Для запрошенной операции условия не выполнены.";
             }
             case ValidateRequestException ex -> {

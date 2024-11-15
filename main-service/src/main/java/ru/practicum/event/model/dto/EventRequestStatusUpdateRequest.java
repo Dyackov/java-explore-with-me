@@ -2,7 +2,6 @@ package ru.practicum.event.model.dto;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.practicum.request.model.enums.RequestState;
@@ -13,7 +12,7 @@ import java.util.Set;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+//@Builder
 public class EventRequestStatusUpdateRequest {
     private Set<Long> requestIds = new HashSet<>();
     @NotNull
@@ -22,7 +21,7 @@ public class EventRequestStatusUpdateRequest {
     @Override
     public String toString() {
         return "EventRequestStatusUpdateRequest{" +
-                "\neventIds=" + requestIds +
+                "\nrequestIds=" + requestIds +
                 "\nstatus=" + status +
                 '}';
     }

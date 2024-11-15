@@ -22,15 +22,6 @@ public class PublicEventController {
 
     private final EventService eventServiceImpl;
 
-    @GetMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public EventFullDto getEventByIdPublic(@PathVariable int id,
-                                           HttpServletRequest request) {
-        logRequestDetails(request);
-        log.info("Public:Получение подробной информации об опубликованном событии. Событие ID: {}", id);
-        return eventServiceImpl.getEventByIdPublic(id);
-    }
-
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<EventShortDto> getAllEventsPublic(@RequestParam(required = false) String text,
@@ -57,10 +48,19 @@ public class PublicEventController {
                 Вариант сортировки: {}
                 Количество событий, которые нужно пропустить: {}
                 Количество событий в наборе: {}
-                """, text, categories, paid, rangeStart, onlyAvailable, rangeEnd, sort, from, size);
-        return eventServiceImpl.getAllEventsPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+                """, text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+        return eventServiceImpl.getAllEventsPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort,
+                from, size, request);
     }
 
+    @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public EventFullDto getEventByIdPublic(@PathVariable int id,
+                                           HttpServletRequest request) {
+        logRequestDetails(request);
+        log.info("Public:Получение подробной информации об опубликованном событии. Событие ID: {}", id);
+        return eventServiceImpl.getEventByIdPublic(id, request);
+    }
 
     private void logRequestDetails(HttpServletRequest request) {
         String method = request.getMethod();

@@ -1,6 +1,7 @@
 package ru.practicum.event.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -38,11 +39,11 @@ public class AdminEventController {
         logRequestDetails(request);
         log.info("""
                 Admin:Получен запрос на поиск событий:
-                Список ID пользователей: {}\
-                Список состояний: {}\
-                Список ID категорий: {}\
-                Дата и время не раньше которых должно произойти событие: {}\
-                Дата и время не позже которых должно произойти событие: {}\
+                Список ID пользователей: {}
+                Список состояний: {}
+                Список ID категорий: {}
+                Дата и время не раньше которых должно произойти событие: {}
+                Дата и время не позже которых должно произойти событие: {}
                 from: {}, size: {}""", users, states, categories, rangeStart, rangeEnd, from, size);
         return eventServiceImpl.getAllEventsAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
     }
@@ -50,7 +51,7 @@ public class AdminEventController {
     @PatchMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
     public EventFullDto updateEventAdmin(@PathVariable long eventId,
-                                         @RequestBody UpdateEventAdminRequest updateEventAdminRequest,
+                                         @RequestBody @Valid UpdateEventAdminRequest updateEventAdminRequest,
                                          HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Admin:Получен запрос на обновление события. ID события: {}.\n{}", eventId, updateEventAdminRequest);
