@@ -52,6 +52,7 @@ public class CommentServiceImpl implements CommentService {
      * @return Полная информация о созданном комментарии
      * @throws StateValidateException Если событие не опубликовано
      */
+    @Override
     public CommentFullDto createCommentPrivate(Long userId, Long eventId, NewCommentDto newCommentDto) {
         log.debug("Private:Создание комментария: ID Пользователя: {}, ID События: {},\n{}", userId, eventId, newCommentDto);
         User commentator = userServiceImpl.getUserByIdOrThrow(userId);

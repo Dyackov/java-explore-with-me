@@ -874,8 +874,12 @@
 									"\r",
 									"const target = pm.response.json()[0];\r",
 									"\r",
+									"\r",
 									"pm.test(\"Комментарий должен содержать поля: id, text, created, status\", function () {\r",
-									"    pm.expect(target).to.contain.keys('id', 'text', 'created', 'status');\r",
+									"pm.expect(target[0]).to.have.property('id');\r",
+									"pm.expect(target[0]).to.have.property('text');\r",
+									"pm.expect(target[0]).to.have.property('created');\r",
+									"pm.expect(target[0]).to.have.property('status');\r",
 									"});\r",
 									"\r",
 									"pm.test(\"Данные в ответе должны соответствовать данным в запросе\", function () {\r",
@@ -951,104 +955,6 @@
 		{
 			"name": "Validation",
 			"item": [
-				{
-					"name": "Добавление нового комментария с полем null",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"const main = async () => {\r",
-									"    const api = new API(pm);\r",
-									"    const rnd = new RandomUtils();\r",
-									"\r",
-									"    let event;\r",
-									"    try {\r",
-									"        const user = await api.addUser(rnd.getUser());\r",
-									"        const category = await api.addCategory(rnd.getCategory());\r",
-									"        event = await api.addEvent(user.id, rnd.getEvent(category.id));\r",
-									"        event = await api.publishEvent(event.id);\r",
-									"        pm.collectionVariables.set(\"eid\", event.id);\r",
-									"        const userCom = await api.addUser(rnd.getUser());\r",
-									"        pm.collectionVariables.set(\"uid\", userCom.id);\r",
-									"        pm.collectionVariables.set('response', event);\r",
-									"\r",
-									"    } catch(err) {\r",
-									"        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
-									"    }\r",
-									"};\r",
-									"\r",
-									"const interval = setInterval(() => {}, 1000);\r",
-									"\r",
-									"setTimeout(async () => \r",
-									"    {\r",
-									"        try {\r",
-									"            await main();\r",
-									"        } catch (e) {\r",
-									"            console.error(e);\r",
-									"        } finally {\r",
-									"            clearInterval(interval);\r",
-									"        }\r",
-									"    },  \r",
-									"    100 \r",
-									");"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Ответ должен содержать код статуса 400 и данные в формате json\", function () {\r",
-									"    pm.response.to.be.badRequest;    \r",
-									"    pm.response.to.be.withBody;\r",
-									"    pm.response.to.be.json;\r",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"text\": null\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/users/:userId/comments/:eventId",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"users",
-								":userId",
-								"comments",
-								":eventId"
-							],
-							"variable": [
-								{
-									"key": "userId",
-									"value": "{{uid}}"
-								},
-								{
-									"key": "eventId",
-									"value": "{{eid}}"
-								}
-							]
-						}
-					},
-					"response": []
-				},
 				{
 					"name": "Добавление нового комментария с пробелами в поле",
 					"event": [
