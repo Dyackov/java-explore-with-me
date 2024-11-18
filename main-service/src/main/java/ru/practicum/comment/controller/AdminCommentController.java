@@ -90,7 +90,7 @@ public class AdminCommentController {
                                                          @RequestParam(defaultValue = "10") int size,
                                                          HttpServletRequest request) {
         logRequestDetails(request);
-        log.info(""" 
+        log.info("""
                 Admin:Запрос на получение комментариев с фильтрацией.
                 Список идентификаторов комментариев: {}
                 Текст для поиска: {}
