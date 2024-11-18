@@ -108,12 +108,12 @@ public class Event {
     @Override
     public String toString() {
         return "Event{" +
-                "\nannotation='" + annotation + '\'' +
+//                "\nannotation='" + annotation + '\'' +
                 "\nid=" + id +
                 "\ncategory=" + category +
                 "\nconfirmedRequests=" + confirmedRequests +
                 "\ncreatedOn=" + createdOn +
-                "\ndescription='" + description + '\'' +
+//                "\ndescription='" + description + '\'' +
                 "\neventDate=" + eventDate +
                 "\ninitiator=" + initiator +
                 "\nlocation=" + location +

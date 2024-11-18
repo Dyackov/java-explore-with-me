@@ -24,7 +24,7 @@ public class AdminUserController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserDto createUserAdmin(@RequestBody @Valid NewUserRequest newUserRequest,
-                              HttpServletRequest request) {
+                                   HttpServletRequest request) {
         logRequestDetails(request);
         log.info("Admin:Получен запрос на создание пользователя:\n{}", newUserRequest);
         return userServiceImpl.createUserAdmin(newUserRequest);
