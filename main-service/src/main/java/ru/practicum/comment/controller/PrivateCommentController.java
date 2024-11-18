@@ -14,6 +14,10 @@ import ru.practicum.comment.service.CommentService;
 
 import java.util.List;
 
+/**
+ * Контроллер для работы с комментариями в пользовательской части системы.
+ * Реализует методы для добавления, получения и обновления комментариев пользователем.
+ */
 @RestController
 @RequestMapping("/users/{userId}/comments")
 @RequiredArgsConstructor
@@ -22,6 +26,15 @@ public class PrivateCommentController {
 
     private final CommentService commentServiceImpl;
 
+    /**
+     * Добавляет новый комментарий для пользователя на событие.
+     *
+     * @param userId идентификатор пользователя
+     * @param eventId идентификатор события
+     * @param newCommentDto DTO для создания нового комментария
+     * @param request объект запроса для логирования
+     * @return полный комментарий после создания
+     */
     @PostMapping("/{eventId}")
     @ResponseStatus(HttpStatus.CREATED)
     public CommentFullDto createCommentPrivate(@PathVariable long userId,
@@ -34,6 +47,14 @@ public class PrivateCommentController {
         return commentServiceImpl.createCommentPrivate(userId, eventId, newCommentDto);
     }
 
+    /**
+     * Получает полную информацию о комментарии по его ID.
+     *
+     * @param userId идентификатор пользователя
+     * @param commentId идентификатор комментария
+     * @param request объект запроса для логирования
+     * @return полный комментарий
+     */
     @GetMapping("/{commentId}")
     @ResponseStatus(HttpStatus.OK)
     public CommentFullDto getCommentByIdPrivate(@PathVariable long userId,
@@ -45,6 +66,15 @@ public class PrivateCommentController {
         return commentServiceImpl.getCommentByIdPrivate(userId, commentId);
     }
 
+    /**
+     * Получает список всех комментариев пользователя.
+     *
+     * @param userId идентификатор пользователя
+     * @param from количество комментариев, которые нужно пропустить (сдвиг)
+     * @param size количество комментариев в наборе
+     * @param request объект запроса для логирования
+     * @return список комментариев пользователя
+     */
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<CommentDto> getCommentsByUserIdPrivate(@PathVariable long userId,
@@ -57,6 +87,15 @@ public class PrivateCommentController {
         return commentServiceImpl.getCommentsByUserIdPrivate(userId, from, size);
     }
 
+    /**
+     * Обновляет комментарий пользователя.
+     *
+     * @param userId идентификатор пользователя
+     * @param commentId идентификатор комментария
+     * @param updateCommentDto DTO для обновления комментария
+     * @param request объект запроса для логирования
+     * @return обновленный комментарий
+     */
     @PatchMapping("/{commentId}")
     @ResponseStatus(HttpStatus.OK)
     public CommentFullDto updateCommentPrivate(@PathVariable long userId,
@@ -69,6 +108,11 @@ public class PrivateCommentController {
         return commentServiceImpl.updateCommentPrivate(userId, commentId, updateCommentDto);
     }
 
+    /**
+     * Логирует детали запроса: метод, URL и параметры.
+     *
+     * @param request объект запроса
+     */
     private void logRequestDetails(HttpServletRequest request) {
         String method = request.getMethod();
         String url = request.getRequestURL().toString();

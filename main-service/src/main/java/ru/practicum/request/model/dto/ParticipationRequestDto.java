@@ -9,16 +9,40 @@ import ru.practicum.request.model.enums.RequestState;
 
 import java.time.LocalDateTime;
 
+/**
+ * DTO для представления заявки на участие в событии.
+ * Содержит информацию о заявке, ее статусе и времени создания.
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ParticipationRequestDto {
-    Long id;
+
+    /**
+     * Идентификатор заявки.
+     */
+    private Long id;
+
+    /**
+     * Время создания заявки.
+     */
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime created;
+    private LocalDateTime created;
+
+    /**
+     * Идентификатор события, на которое сделана заявка.
+     */
     @NotNull
-    Long event;
+    private Long event;
+
+    /**
+     * Идентификатор пользователя, сделавшего заявку.
+     */
     @NotNull
-    Long requester;
-    RequestState status;
+    private Long requester;
+
+    /**
+     * Статус заявки.
+     */
+    private RequestState status;
 }

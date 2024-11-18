@@ -15,13 +15,26 @@ import ru.practicum.comment.service.CommentService;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Контроллер для работы с комментариями в административной части системы.
+ * Реализует методы для получения, обновления и удаления комментариев с административными правами.
+ */
 @RestController
 @RequestMapping("/admin/comments")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminCommentController {
+
     private final CommentService commentServiceImpl;
 
+    /**
+     * Обновляет статус комментария по его ID.
+     *
+     * @param commentId идентификатор комментария
+     * @param updateStatusCommentAdmin DTO для обновления статуса комментария
+     * @param request объект запроса для логирования
+     * @return обновленный комментарий
+     */
     @PatchMapping("/{commentId}")
     @ResponseStatus(HttpStatus.OK)
     public CommentFullDto updateStatusCommentAdmin(@PathVariable long commentId,
@@ -32,6 +45,12 @@ public class AdminCommentController {
         return commentServiceImpl.updateStatusCommentAdmin(commentId, updateStatusCommentAdmin);
     }
 
+    /**
+     * Удаляет комментарий по его ID.
+     *
+     * @param commentId идентификатор комментария
+     * @param request объект запроса для логирования
+     */
     @DeleteMapping("/{commentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void deleteCommentAdmin(@PathVariable long commentId,
@@ -41,6 +60,21 @@ public class AdminCommentController {
         commentServiceImpl.deleteCommentAdmin(commentId);
     }
 
+    /**
+     * Получает список комментариев с фильтрацией по различным параметрам.
+     *
+     * @param commentIds список идентификаторов комментариев для фильтрации
+     * @param text текст для поиска в комментариях
+     * @param commentatorIds список идентификаторов комментаторов
+     * @param eventIds список идентификаторов событий
+     * @param rangeStart начало диапазона времени для создания комментариев
+     * @param rangeEnd конец диапазона времени для создания комментариев
+     * @param status статус комментария
+     * @param from количество комментариев, которые нужно пропустить (сдвиг)
+     * @param size количество комментариев в наборе
+     * @param request объект запроса для логирования
+     * @return список комментариев, соответствующих фильтрам
+     */
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<CommentFullDto> getCommentBySearchAdmins(@RequestParam(required = false) List<Long> commentIds,
@@ -56,7 +90,7 @@ public class AdminCommentController {
                                                          @RequestParam(defaultValue = "10") int size,
                                                          HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("""
+        log.info(""" 
                 Admin:Запрос на получение комментариев с фильтрацией.
                 Список идентификаторов комментариев: {}
                 Текст для поиска: {}
@@ -72,6 +106,11 @@ public class AdminCommentController {
                 rangeEnd, status, from, size);
     }
 
+    /**
+     * Логирует детали запроса: метод, URL и параметры.
+     *
+     * @param request объект запроса
+     */
     private void logRequestDetails(HttpServletRequest request) {
         String method = request.getMethod();
         String url = request.getRequestURL().toString();

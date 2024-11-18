@@ -29,22 +29,31 @@ import java.util.Optional;
 
 import static ru.practicum.comment.model.QComment.comment;
 
-
+/**
+ * Сервис для работы с комментариями.
+ * Реализует методы для создания, получения, обновления и удаления комментариев как для пользователей, так и для администраторов.
+ */
 @RequiredArgsConstructor
 @Service
 @Slf4j
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
-
     private final UserService userServiceImpl;
     private final EventService eventServiceImpl;
-
     private final CommentMapper commentMapper;
 
+    /**
+     * Создает новый комментарий для события.
+     *
+     * @param userId ID пользователя, который оставляет комментарий
+     * @param eventId ID события, к которому оставляется комментарий
+     * @param newCommentDto Данные нового комментария
+     * @return Полная информация о созданном комментарии
+     * @throws StateValidateException Если событие не опубликовано
+     */
     public CommentFullDto createCommentPrivate(Long userId, Long eventId, NewCommentDto newCommentDto) {
-        log.debug("Private:Создание комментария: ID Пользователя: {}, ID События: {},\n{}",
-                userId, eventId, newCommentDto);
+        log.debug("Private:Создание комментария: ID Пользователя: {}, ID События: {},\n{}", userId, eventId, newCommentDto);
         User commentator = userServiceImpl.getUserByIdOrThrow(userId);
         Event event = eventServiceImpl.getEventByIdOrThrow(eventId);
         if (event.getState() != State.PUBLISHED) {
@@ -60,16 +69,30 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.toCommentFullDto(comment);
     }
 
+    /**
+     * Получает полный комментарий по его ID для пользователя.
+     *
+     * @param userId ID пользователя
+     * @param commentId ID комментария
+     * @return Полная информация о комментарии
+     */
     @Override
     public CommentFullDto getCommentByIdPrivate(Long userId, Long commentId) {
-        log.debug("Private:Получение полной информации о комментарии. ID пользователя: {}, ID Комментария: {}",
-                userId, commentId);
+        log.debug("Private:Получение полной информации о комментарии. ID пользователя: {}, ID Комментария: {}", userId, commentId);
         userServiceImpl.getUserByIdOrThrow(userId);
         Comment comment = getCommentAndCheckAuthorization(userId, commentId);
         log.info("Private:Получен комментарий:\n{}", comment);
         return commentMapper.toCommentFullDto(comment);
     }
 
+    /**
+     * Получает все комментарии пользователя.
+     *
+     * @param userId ID пользователя
+     * @param from Индекс первого комментария в выборке
+     * @param size Количество комментариев в выборке
+     * @return Список комментариев
+     */
     @Override
     public List<CommentDto> getCommentsByUserIdPrivate(long userId, int from, int size) {
         log.debug("Private:Получение всех комментариев. ID пользователя:{}, from:{}, size:{}", userId, from, size);
@@ -80,6 +103,15 @@ public class CommentServiceImpl implements CommentService {
         return comments.stream().map(commentMapper::toCommentDto).toList();
     }
 
+    /**
+     * Обновляет комментарий пользователя.
+     *
+     * @param userId ID пользователя
+     * @param commentId ID комментария
+     * @param updateCommentDto Данные для обновления комментария
+     * @return Полная информация о обновленном комментарии
+     * @throws StateValidateException Если комментарий опубликован
+     */
     @Override
     public CommentFullDto updateCommentPrivate(long userId, long commentId, UpdateCommentDto updateCommentDto) {
         log.debug("Обновление комментария ID: {}\n{}", commentId, updateCommentDto);
@@ -93,6 +125,14 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.toCommentFullDto(comment);
     }
 
+    /**
+     * Получает все опубликованные комментарии для события.
+     *
+     * @param eventId ID события
+     * @param from Индекс первого комментария в выборке
+     * @param size Количество комментариев в выборке
+     * @return Список комментариев
+     */
     @Override
     public List<CommentFullDto> getAllCommentsByEventIdPublic(long eventId, int from, int size) {
         log.debug("Public:Получен запрос на получение комментариев. ID События: {}.", eventId);
@@ -103,6 +143,11 @@ public class CommentServiceImpl implements CommentService {
         return comments.stream().map(commentMapper::toCommentFullDto).toList();
     }
 
+    /**
+     * Удаляет комментарий по ID администратора.
+     *
+     * @param commentId ID комментария
+     */
     @Override
     public void deleteCommentAdmin(long commentId) {
         log.info("Admin:Удаление комментария. ID Комментария: {}.", commentId);
@@ -111,6 +156,13 @@ public class CommentServiceImpl implements CommentService {
         log.info("Admin:Комментарий удалён. ID Комментария: {}.", commentId);
     }
 
+    /**
+     * Обновляет статус комментария администратором.
+     *
+     * @param commentId ID комментария
+     * @param updateStatusCommentAdmin Данные для обновления статуса
+     * @return Полная информация о обновленном комментарии
+     */
     @Override
     public CommentFullDto updateStatusCommentAdmin(long commentId, UpdateStatusCommentAdmin updateStatusCommentAdmin) {
         log.debug("Admin:Обновление статуса комментария.ID Комментария: {}.", commentId);
@@ -120,6 +172,22 @@ public class CommentServiceImpl implements CommentService {
         log.info("Admin:Обновлён статус комментария.ID Комментария: {}, Статус: {}", commentId, updatedComment.getStatus());
         return commentMapper.toCommentFullDto(comment);
     }
+
+    /**
+     * Получает список комментариев с фильтрацией для администраторов.
+     *
+     * @param commentIds Список ID комментариев
+     * @param text Текст для поиска в комментариях
+     * @param commentatorIds Список ID пользователей-комментаторов
+     * @param eventIds Список ID событий
+     * @param rangeStart Начало временного диапазона
+     * @param rangeEnd Конец временного диапазона
+     * @param status Статус комментария
+     * @param from Индекс первого комментария в выборке
+     * @param size Количество комментариев в выборке
+     * @return Список комментариев с фильтрацией
+     * @throws DataTimeException Если время начала позже времени окончания
+     */
 
     @Override
     public List<CommentFullDto> getCommentBySearchAdmins(List<Long> commentIds, String text, List<Long> commentatorIds,
@@ -178,6 +246,13 @@ public class CommentServiceImpl implements CommentService {
         return comments.stream().map(commentMapper::toCommentFullDto).toList();
     }
 
+    /**
+     * Получает комментарий по его идентификатору или выбрасывает исключение, если комментарий не найден.
+     *
+     * @param commentId Идентификатор комментария.
+     * @return Объект комментария.
+     * @throws NotFoundException Если комментарий с указанным идентификатором не найден.
+     */
 
     @Override
     public Comment getCommentByIdOrThrow(long commentId) {
@@ -185,6 +260,16 @@ public class CommentServiceImpl implements CommentService {
         return commentRepository.findById(commentId).orElseThrow(() -> new NotFoundException(
                 "Comment with id = " + commentId + " was not found"));
     }
+
+    /**
+     * Проверяет, является ли пользователь владельцем комментария.
+     *
+     * @param userId Идентификатор пользователя, для которого проверяется авторизация.
+     * @param commentId Идентификатор комментария, для которого проверяется авторизация.
+     * @return Комментарий, если пользователь является его владельцем.
+     * @throws AuthorizationException Если пользователь не является владельцем комментария.
+     * @throws NotFoundException Если комментарий с указанным идентификатором не найден.
+     */
 
     @Override
     public Comment getCommentAndCheckAuthorization(long userId, long commentId) {
@@ -196,6 +281,15 @@ public class CommentServiceImpl implements CommentService {
         }
         return comment;
     }
+
+    /**
+     * Создает объект Pageable для пагинации.
+     *
+     * @param from Количество элементов, которые нужно пропустить (для пагинации).
+     * @param size Количество элементов, которое нужно вернуть (для пагинации).
+     * @param sort Параметры сортировки.
+     * @return Объект Pageable для дальнейшего использования в запросах к базе данных.
+     */
 
     private Pageable createPageable(int from, int size, Sort sort) {
         log.debug("Create Pageable with offset from {}, size {}", from, size);
