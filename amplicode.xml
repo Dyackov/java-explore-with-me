@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AmplicodeJpaPluginProjectSettings">
+    <option name="lastSelectedLanguage" value="Java" />
+  </component>
+  <component name="AmplicodePersistenceUnitSettings">
+    <persistence-units>
+      <persistence-unit moduleName="statistics-service" name="Default">
+        <packages>
+          <package value="ru.practicum" />
+        </packages>
+      </persistence-unit>
+      <persistence-unit moduleName="statistics-dto" name="Default" />
+      <persistence-unit moduleName="main-service" name="Default">
+        <packages>
+          <package value="ru.practicum" />
+        </packages>
+      </persistence-unit>
+      <persistence-unit moduleName="statistics-client" name="Default" />
+    </persistence-units>
+  </component>
+</project>

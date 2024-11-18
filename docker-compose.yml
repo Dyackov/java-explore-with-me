@@ -8,11 +8,9 @@ services:
     depends_on:
       - stats-db
     environment:
-      - TZ=Europe/Moscow
-      - PGTZ=Europe/Moscow
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/postgres
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=1234
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/ewm_stats
+      - SPRING_DATASOURCE_USERNAME=adminStats
+      - SPRING_DATASOURCE_PASSWORD=adminStats
 
   stats-db:
     image: postgres:16.1
@@ -20,9 +18,9 @@ services:
     ports:
       - "5433:5432"
     environment:
-      - POSTGRES_PASSWORD=1234
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgres
+      - POSTGRES_DB=ewm_stats
+      - POSTGRES_PASSWORD=adminStats
+      - POSTGRES_USER=adminStats
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -35,5 +33,25 @@ services:
     container_name: main-service
     ports:
       - "8080:8080"
+    depends_on:
+      - main-db
     environment:
       - CLIENT=http://statistics-service:9090
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/ewm_stats
+      - SPRING_DATASOURCE_USERNAME=adminStats
+      - SPRING_DATASOURCE_PASSWORD=adminStats
+
+  main-db:
+    image: postgres:16.1
+    container_name: main-database
+    ports:
+      - "5435:5432"
+    environment:
+      - POSTGRES_DB=ewm
+      - POSTGRES_PASSWORD=adminEwm
+      - POSTGRES_USER=adminEwm
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
