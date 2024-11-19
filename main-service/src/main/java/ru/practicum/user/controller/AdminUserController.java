@@ -12,6 +12,9 @@ import ru.practicum.user.service.UserService;
 
 import java.util.List;
 
+/**
+ * Контроллер для управления пользователями администраторами.
+ */
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/admin/users")
@@ -21,6 +24,13 @@ public class AdminUserController {
 
     private final UserService userServiceImpl;
 
+    /**
+     * Создает нового пользователя.
+     *
+     * @param newUserRequest данные нового пользователя.
+     * @param request        HTTP-запрос.
+     * @return информация о созданном пользователе.
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserDto createUserAdmin(@RequestBody @Valid NewUserRequest newUserRequest,
@@ -30,6 +40,15 @@ public class AdminUserController {
         return userServiceImpl.createUserAdmin(newUserRequest);
     }
 
+    /**
+     * Получает список пользователей.
+     *
+     * @param ids   список идентификаторов пользователей.
+     * @param from  начальный индекс для пагинации.
+     * @param size  количество пользователей для возврата.
+     * @param request HTTP-запрос.
+     * @return список пользователей.
+     */
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<UserDto> getUsersAdmin(@RequestParam(required = false) List<Integer> ids,
@@ -42,6 +61,12 @@ public class AdminUserController {
         return userServiceImpl.getUsersAdmin(ids, from, size);
     }
 
+    /**
+     * Удаляет пользователя по идентификатору.
+     *
+     * @param userId  идентификатор пользователя.
+     * @param request HTTP-запрос.
+     */
     @DeleteMapping("/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUserByIdAdmin(@PathVariable long userId,
@@ -51,6 +76,11 @@ public class AdminUserController {
         userServiceImpl.deleteUserByIdAdmin(userId);
     }
 
+    /**
+     * Логирует детали HTTP-запроса.
+     *
+     * @param request HTTP-запрос.
+     */
     private void logRequestDetails(HttpServletRequest request) {
         String method = request.getMethod();
         String url = request.getRequestURL().toString();

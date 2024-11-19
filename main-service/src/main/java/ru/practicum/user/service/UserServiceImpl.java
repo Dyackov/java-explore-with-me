@@ -15,6 +15,9 @@ import ru.practicum.user.storage.UserRepository;
 
 import java.util.List;
 
+/**
+ * Реализация сервиса для управления пользователями.
+ */
 @RequiredArgsConstructor
 @Service
 @Slf4j
@@ -23,6 +26,12 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
 
+    /**
+     * Создаёт нового пользователя.
+     *
+     * @param newUserRequest данные для создания нового пользователя
+     * @return DTO созданного пользователя
+     */
     @Override
     public UserDto createUserAdmin(NewUserRequest newUserRequest) {
         log.debug("Admin:Создание пользователя: {}", newUserRequest);
@@ -32,6 +41,14 @@ public class UserServiceImpl implements UserService {
         return userMapper.toUserDto(resultUser);
     }
 
+    /**
+     * Получает список пользователей по их идентификаторам с поддержкой пагинации.
+     *
+     * @param ids список идентификаторов пользователей
+     * @param from смещение для пагинации
+     * @param size количество записей на страницу
+     * @return список DTO пользователей
+     */
     @Override
     public List<UserDto> getUsersAdmin(List<Integer> ids, int from, int size) {
         log.debug("Admin:Получение пользователей id: {}", ids);
@@ -47,6 +64,11 @@ public class UserServiceImpl implements UserService {
         return result;
     }
 
+    /**
+     * Удаляет пользователя по его идентификатору.
+     *
+     * @param userId идентификатор пользователя, которого нужно удалить
+     */
     @Override
     public void deleteUserByIdAdmin(long userId) {
         log.debug("Admin:Удаление пользователя id: {}", userId);
@@ -55,6 +77,13 @@ public class UserServiceImpl implements UserService {
         log.info("Admin:Пользователь с id: {} , удалён", userId);
     }
 
+    /**
+     * Получает пользователя по его идентификатору или выбрасывает исключение, если пользователь не найден.
+     *
+     * @param userId идентификатор пользователя
+     * @return найденный пользователь
+     * @throws NotFoundException если пользователь не найден
+     */
     @Override
     public User getUserByIdOrThrow(long userId) {
         return userRepository.findById(userId).orElseThrow(() -> new NotFoundException(
