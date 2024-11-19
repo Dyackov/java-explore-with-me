@@ -115,12 +115,12 @@
 								{
 									"key": "userId",
 									"value": "{{uid}}",
-									"type": "text"
+									"type": "string"
 								},
 								{
 									"key": "eventId",
 									"value": "{{eid}}",
-									"type": "text"
+									"type": "string"
 								}
 							]
 						}
