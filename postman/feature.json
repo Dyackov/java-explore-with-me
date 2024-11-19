@@ -29,8 +29,8 @@
 									"        pm.collectionVariables.set(\"eid\", event.id);\r",
 									"        const userCom = await api.addUser(rnd.getUser());\r",
 									"        pm.collectionVariables.set(\"uid\", userCom.id);\r",
-									"        pm.collectionVariables.set('response', event);\r",
 									"\r",
+									"  \r",
 									"    } catch(err) {\r",
 									"        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
 									"    }\r",
@@ -1158,7 +1158,7 @@
 		},
 		{
 			"key": "baseUrl",
-			"value": "",
+			"value": "http://localhost:8080",
 			"type": "default"
 		},
 		{
@@ -1176,10 +1176,6 @@
 		},
 		{
 			"key": "response3",
-			"value": ""
-		},
-		{
-			"key": "сid",
 			"value": ""
 		}
 	]
