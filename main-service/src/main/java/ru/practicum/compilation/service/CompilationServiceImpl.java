@@ -6,7 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import ru.practicum.compilation.mapper.CompilationMapper;
+import ru.practicum.compilation.model.mapper.CompilationMapper;
 import ru.practicum.compilation.model.Compilation;
 import ru.practicum.compilation.model.dto.CompilationDto;
 import ru.practicum.compilation.model.dto.NewCompilationDto;
@@ -21,6 +21,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Сервис для работы с подборками.
+ * Осуществляет создание, удаление, обновление, получение подборок, а также проверку существования событий в подборке.
+ */
 @RequiredArgsConstructor
 @Service
 @Slf4j
@@ -30,6 +34,12 @@ public class CompilationServiceImpl implements CompilationService {
     private final EventRepository eventRepository;
     private final CompilationMapper compilationMapper;
 
+    /**
+     * Создает новую подборку.
+     *
+     * @param newCompilationDto DTO для создания подборки.
+     * @return DTO созданной подборки.
+     */
     @Override
     public CompilationDto createCompilationAdmin(NewCompilationDto newCompilationDto) {
         log.debug("Создание новой подборки: {}", newCompilationDto);
@@ -45,6 +55,11 @@ public class CompilationServiceImpl implements CompilationService {
         return compilationMapper.toCompilationDto(savedCompilation);
     }
 
+    /**
+     * Удаляет подборку по ID.
+     *
+     * @param compId ID подборки для удаления.
+     */
     @Override
     public void deleteCompilationAdmin(long compId) {
         log.debug("Удаление подборки. ID подборки: {}", compId);
@@ -53,13 +68,27 @@ public class CompilationServiceImpl implements CompilationService {
         log.info("Удалена подборка. ID подборки: {}", compId);
     }
 
+    /**
+     * Получает подборку по ID.
+     * Если подборка не найдена, выбрасывает исключение NotFoundException.
+     *
+     * @param compId ID подборки.
+     * @return найденная подборка.
+     */
     @Override
     public Compilation getCompilationByIdOrThrow(long compId) {
-        log.debug("Попытка получение подборки. ID подборки: {}", compId);
+        log.debug("Попытка получения подборки. ID подборки: {}", compId);
         return compilationRepository.findById(compId).orElseThrow(() -> new NotFoundException(
                 "Compilation with id = " + compId + " was not found"));
     }
 
+    /**
+     * Обновляет подборку по ID.
+     *
+     * @param compId ID подборки.
+     * @param updateCompilationRequest данные для обновления.
+     * @return DTO обновленной подборки.
+     */
     @Override
     public CompilationDto updateCompilationAdmin(long compId, UpdateCompilationRequest updateCompilationRequest) {
         log.debug("Обновление подборки. ID подборки: {}", compId);
@@ -76,6 +105,12 @@ public class CompilationServiceImpl implements CompilationService {
         return compilationMapper.toCompilationDto(savedCompilation);
     }
 
+    /**
+     * Получает подборку по ID для публичного доступа.
+     *
+     * @param compId ID подборки.
+     * @return DTO найденной подборки.
+     */
     @Override
     public CompilationDto getCompilationByIdPublic(long compId) {
         log.debug("Получение подборки. ID подборки: {}", compId);
@@ -84,6 +119,14 @@ public class CompilationServiceImpl implements CompilationService {
         return compilationMapper.toCompilationDto(compilation);
     }
 
+    /**
+     * Получает список подборок с учетом параметров pinned, from и size для пагинации.
+     *
+     * @param pinned флаг закрепленности подборки.
+     * @param from   начальный индекс для пагинации.
+     * @param size   размер страницы.
+     * @return список DTO подборок.
+     */
     @Override
     public List<CompilationDto> getCompilationsPublic(Boolean pinned, int from, int size) {
         log.debug("Получение подборок. pinned: {}, from: {}, size: {}", pinned, from, size);
@@ -93,11 +136,26 @@ public class CompilationServiceImpl implements CompilationService {
         return compilations.stream().map(compilationMapper::toCompilationDto).toList();
     }
 
+    /**
+     * Создает объект Pageable для пагинации.
+     *
+     * @param from   начальный индекс.
+     * @param size   размер страницы.
+     * @param sort   сортировка.
+     * @return объект Pageable.
+     */
     private Pageable createPageable(int from, int size, Sort sort) {
         log.debug("Create Pageable with offset from {}, size {}", from, size);
         return PageRequest.of(from / size, size, sort);
     }
 
+    /**
+     * Проверяет наличие всех событий по их ID.
+     * Если какие-то события не найдены, выбрасывает исключение NotFoundException.
+     *
+     * @param events    список событий.
+     * @param actualIds список ID событий.
+     */
     @Override
     public void checkEventExists(List<Event> events, List<Long> actualIds) {
         if (events.size() != actualIds.size()) {

@@ -9,6 +9,9 @@ import ru.practicum.user.model.User;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * Сущность заявки на участие в событии.
+ */
 @Getter
 @Setter
 @Entity
@@ -17,25 +20,47 @@ import java.util.Objects;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Request {
+
+    /**
+     * Идентификатор заявки.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
+    /**
+     * Дата и время создания заявки.
+     */
     @Column(name = "created")
     private LocalDateTime created;
 
+    /**
+     * Событие, к которому относится заявка.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id")
     private Event event;
 
+    /**
+     * Пользователь, который подал заявку.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requester_id")
     private User requester;
 
+    /**
+     * Статус заявки.
+     */
     @Column(name = "status", length = Integer.MAX_VALUE)
     private RequestState status;
 
+    /**
+     * Проверяет равенство текущей заявки и другой заявки.
+     *
+     * @param o объект для сравнения.
+     * @return true, если объекты равны, иначе false.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -48,11 +73,21 @@ public class Request {
                 status == request.status;
     }
 
+    /**
+     * Генерирует хэш-код для заявки.
+     *
+     * @return хэш-код заявки.
+     */
     @Override
     public int hashCode() {
         return Objects.hash(id, created, event, requester, status);
     }
 
+    /**
+     * Возвращает строковое представление заявки.
+     *
+     * @return строка, представляющая заявку.
+     */
     @Override
     public String toString() {
         return "Request{" +

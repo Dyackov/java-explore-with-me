@@ -18,10 +18,19 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Обработчик ошибок, перехватывающий различные исключения и возвращающий соответствующие ответы клиенту.
+ */
 @RestControllerAdvice
 @Slf4j
 public class ErrorHandler {
 
+    /**
+     * Обрабатывает различные типы исключений и возвращает детализированный ответ.
+     *
+     * @param e Исключение, которое произошло.
+     * @return Ответ с подробной информацией об ошибке.
+     */
     @ExceptionHandler({
             ValidationException.class,
             MissingServletRequestParameterException.class,
@@ -99,7 +108,12 @@ public class ErrorHandler {
         return ResponseEntity.status(status).body(apiError);
     }
 
-
+    /**
+     * Обрабатывает исключение EntityNotFoundException.
+     *
+     * @param e Исключение, которое произошло.
+     * @return Ответ с сообщением об ошибке.
+     */
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiErrors handleNotFound(final EntityNotFoundException e) {

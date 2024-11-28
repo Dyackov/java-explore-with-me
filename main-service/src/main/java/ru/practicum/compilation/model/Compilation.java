@@ -9,6 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Сущность, представляющая подборку (compilation), которая может содержать несколько событий.
+ * Включает поля для идентификатора, флага закрепления, названия и списка событий.
+ */
 @Getter
 @Setter
 @Entity
@@ -18,19 +22,32 @@ import java.util.Objects;
 @NoArgsConstructor
 public class Compilation {
 
+    /**
+     * Уникальный идентификатор подборки.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
+    /**
+     * Флаг, указывающий, является ли подборка закрепленной.
+     */
     @NotNull
     @Column(name = "pinned", nullable = false)
     private Boolean pinned = false;
 
+    /**
+     * Название подборки.
+     */
     @NotNull
     @Column(name = "title", nullable = false, length = Integer.MAX_VALUE)
     private String title;
 
+    /**
+     * Список событий, входящих в подборку.
+     * Используется связь многие ко многим (ManyToMany).
+     */
     @ManyToMany
     @JoinTable(
             name = "COMPILATIONS_EVENTS",
@@ -40,6 +57,13 @@ public class Compilation {
     private List<Event> events = new ArrayList<>();
 
 
+    /**
+     * Переопределенный метод equals для проверки равенства объектов Compilation.
+     * Сравнивает id, pinned и title.
+     *
+     * @param o объект для сравнения.
+     * @return true, если объекты равны, иначе false.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -48,11 +72,21 @@ public class Compilation {
         return Objects.equals(id, that.id) && Objects.equals(pinned, that.pinned) && Objects.equals(title, that.title);
     }
 
+    /**
+     * Переопределенный метод hashCode для генерации хеш-кода объекта Compilation.
+     *
+     * @return хеш-код объекта.
+     */
     @Override
     public int hashCode() {
         return Objects.hash(id, pinned, title);
     }
 
+    /**
+     * Переопределенный метод toString для вывода информации о подборке в строковом виде.
+     *
+     * @return строковое представление объекта Compilation.
+     */
     @Override
     public String toString() {
         return "Compilation{" +

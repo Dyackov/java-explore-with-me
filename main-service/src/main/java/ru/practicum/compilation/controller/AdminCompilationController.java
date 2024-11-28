@@ -11,6 +11,10 @@ import ru.practicum.compilation.model.dto.NewCompilationDto;
 import ru.practicum.compilation.model.dto.UpdateCompilationRequest;
 import ru.practicum.compilation.service.CompilationService;
 
+/**
+ * Контроллер для администраторских операций с подборками.
+ * Предоставляет функциональность для создания, удаления и обновления подборок.
+ */
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/admin/compilations")
@@ -20,6 +24,13 @@ public class AdminCompilationController {
 
     private final CompilationService compilationServiceImpl;
 
+    /**
+     * Создает новую подборку.
+     *
+     * @param newCompilationDto Данные для создания подборки
+     * @param request           HTTP запрос
+     * @return DTO новой подборки
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CompilationDto createCompilationAdmin(@RequestBody @Valid NewCompilationDto newCompilationDto,
@@ -29,6 +40,12 @@ public class AdminCompilationController {
         return compilationServiceImpl.createCompilationAdmin(newCompilationDto);
     }
 
+    /**
+     * Удаляет подборку по ID.
+     *
+     * @param compId  ID подборки для удаления
+     * @param request HTTP запрос
+     */
     @DeleteMapping("/{compId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCompilationAdmin(@PathVariable long compId,
@@ -38,6 +55,14 @@ public class AdminCompilationController {
         compilationServiceImpl.deleteCompilationAdmin(compId);
     }
 
+    /**
+     * Обновляет данные подборки.
+     *
+     * @param compId                  ID подборки
+     * @param updateCompilationRequest Данные для обновления подборки
+     * @param request                 HTTP запрос
+     * @return Обновленное DTO подборки
+     */
     @PatchMapping("/{compId}")
     @ResponseStatus(HttpStatus.OK)
     public CompilationDto updateCompilationAdmin(@PathVariable long compId,
@@ -48,6 +73,11 @@ public class AdminCompilationController {
         return compilationServiceImpl.updateCompilationAdmin(compId, updateCompilationRequest);
     }
 
+    /**
+     * Логирует детали HTTP запроса, включая метод, URL и параметры.
+     *
+     * @param request HTTP запрос
+     */
     private void logRequestDetails(HttpServletRequest request) {
         String method = request.getMethod();
         String url = request.getRequestURL().toString();

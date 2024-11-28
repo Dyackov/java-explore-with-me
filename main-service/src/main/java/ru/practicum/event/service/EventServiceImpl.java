@@ -38,6 +38,10 @@ import java.util.stream.Collectors;
 
 import static ru.practicum.event.model.QEvent.event;
 
+/**
+ * Сервис для работы с событиями.
+ * Реализует интерфейс {@link EventService}.
+ */
 @RequiredArgsConstructor
 @Service
 @Slf4j
@@ -58,6 +62,14 @@ public class EventServiceImpl implements EventService {
     private String serviceName;
     private final StatisticsClient statisticsClient;
 
+    /**
+     * Получение списка событий для пользователя.
+     *
+     * @param userId идентификатор пользователя
+     * @param from   количество элементов для пропуска
+     * @param size   количество элементов на странице
+     * @return список кратких данных о событиях
+     */
     @Override
     public List<EventShortDto> getEventsByUserIdPrivate(long userId, int from, int size) {
         log.debug("Private:Получение всех событий. ID пользователя:{}, from:{}, size:{}", userId, from, size);
@@ -69,6 +81,14 @@ public class EventServiceImpl implements EventService {
         return events.stream().map(eventMapper::toEventShortDto).toList();
     }
 
+    /**
+     * Создание нового события для пользователя.
+     *
+     * @param userId      идентификатор пользователя
+     * @param newEventDto данные для создания события
+     * @return полные данные о созданном событии
+     * @throws DataTimeException если дата события некорректна
+     */
     @Override
     public EventFullDto createEventPrivate(long userId, NewEventDto newEventDto) {
         log.debug("Private:Создание события: {}", newEventDto);
@@ -97,6 +117,13 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toEventFullDto(savedEvent);
     }
 
+    /**
+     * Получение события по идентификатору для пользователя.
+     *
+     * @param userId  идентификатор пользователя
+     * @param eventId идентификатор события
+     * @return полные данные о событии
+     */
     @Override
     public EventFullDto getEventByIdPrivate(long userId, long eventId) {
         log.debug("Private:Получение события, ID пользователя: {}, ID события:{}", userId, eventId);
@@ -108,22 +135,34 @@ public class EventServiceImpl implements EventService {
     }
 
 
+    /**
+     * Обновляет событие.
+     *
+     * @param userId                 ID пользователя, инициировавшего обновление события.
+     * @param eventId                ID события, которое нужно обновить.
+     * @param updateEventUserRequest Данные для обновления события.
+     * @return {@link EventFullDto}     Обновлённое событие в виде DTO.
+     * @throws DataTimeException      Если дата события в прошлом или менее чем через два часа от текущего времени.
+     * @throws StateValidateException Если состояние события уже опубликовано.
+     */
     @Override
     public EventFullDto updateEvent(long userId, long eventId, UpdateEventUserRequest updateEventUserRequest) {
         log.debug("Обновление события ID: {}\n{}", eventId, updateEventUserRequest);
         userServiceImpl.getUserByIdOrThrow(userId);
         Event event = getEventAndCheckAuthorization(userId, eventId);
+
         if (updateEventUserRequest.getEventDate() != null) {
             if (updateEventUserRequest.getEventDate().isBefore(LocalDateTime.now())) {
                 throw new DataTimeException("Дата и время на которые намечено событие не может быть в прошлом");
             } else if (updateEventUserRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-                throw new DataTimeException("Дата и время на которые намечено событие не может быть раньше, " +
-                        "чем через два часа от текущего момента");
+                throw new DataTimeException("Дата и время на которые намечено событие не может быть раньше, чем через два часа от текущего момента");
             }
         }
+
         if (event.getState().equals(State.PUBLISHED)) {
             throw new StateValidateException("Можно изменить только отложенные или отмененные события");
         }
+
         Event builderEvent = buildPrivateEventForUpdate(updateEventUserRequest, event);
         Event savedEvent = eventRepository.save(builderEvent);
         setViews(List.of(savedEvent));
@@ -131,6 +170,13 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toEventFullDto(savedEvent);
     }
 
+    /**
+     * Получает запросы на участие в событии для пользователя.
+     *
+     * @param userId  ID пользователя.
+     * @param eventId ID события.
+     * @return Список DTO запросов на участие.
+     */
     @Override
     public List<ParticipationRequestDto> getParticipationRequestsForUserEventsPrivate(long userId, long eventId) {
         log.debug("Private:Получение запросов на участие в событии. ID пользователя: {}, ID события :{}", userId, eventId);
@@ -141,6 +187,15 @@ public class EventServiceImpl implements EventService {
         return requests.stream().map(requestMapper::toParticipationRequestDto).toList();
     }
 
+    /**
+     * Обновляет статус заявок на участие в событии.
+     *
+     * @param userId                          ID пользователя, инициировавшего изменение статуса заявки.
+     * @param eventId                         ID события, для которого обновляются заявки.
+     * @param eventRequestStatusUpdateRequest Данные для обновления статуса заявок.
+     * @return {@link EventRequestStatusUpdateResult} Результат обновления статусов заявок.
+     * @throws ValidationException Если превышен лимит заявок или если статус заявки не может быть изменён.
+     */
     @Override
     public EventRequestStatusUpdateResult updateRequestStatusPrivate(long userId, long eventId,
                                                                      EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
@@ -148,6 +203,7 @@ public class EventServiceImpl implements EventService {
                 "ID пользователя: {}, ID события :{}", userId, eventId);
         userServiceImpl.getUserByIdOrThrow(userId);
         Event event = getEventAndCheckAuthorization(userId, eventId);
+
         if (event.getParticipantLimit() == 0 || event.getRequestModeration().equals(false)) {
             String message = "";
             if (event.getParticipantLimit() == 0) {
@@ -158,6 +214,7 @@ public class EventServiceImpl implements EventService {
             }
             throw new ValidationException(message + "подтверждение заявки не требуется");
         }
+
         if (event.getConfirmedRequests().equals(event.getParticipantLimit())) {
             throw new ValidationException("Достигнут лимит по заявкам на данное событие");
         }
@@ -195,6 +252,18 @@ public class EventServiceImpl implements EventService {
         return eventRequestStatusUpdateResult;
     }
 
+    /**
+     * Получение всех событий для администратора с фильтрацией по пользователям, состояниям, категориям и времени.
+     *
+     * @param users      Список ID пользователей, чьи события нужно получить.
+     * @param states     Список состояний событий.
+     * @param categories Список категорий событий.
+     * @param rangeStart Время начала диапазона событий.
+     * @param rangeEnd   Время окончания диапазона событий.
+     * @param from       Смещение для пагинации.
+     * @param size       Размер страницы для пагинации.
+     * @return Список полных DTO событий.
+     */
     @Override
     public List<EventFullDto> getAllEventsAdmin(List<Long> users, List<State> states, List<Long> categories,
                                                 LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
@@ -230,9 +299,18 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventPage.getContent();
         setViews(events);
         log.info("Admin:Получен список по поиску событий.\n{}", events);
-        return events.stream().map(eventMapper::toEventFullDto).toList();
+        return events.stream().map(eventMapper::toEventFullDto).collect(Collectors.toList());
     }
 
+    /**
+     * Обновление события для администратора.
+     *
+     * @param eventId                 ID события, которое нужно обновить.
+     * @param updateEventAdminRequest Запрос на обновление события.
+     * @return Полное DTO обновленного события.
+     * @throws DataTimeException   Если дата начала события меньше чем на час от времени публикации.
+     * @throws ValidationException Если событие уже опубликовано или отменено.
+     */
     @Override
     public EventFullDto updateEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
         log.debug("Admin:Обновление события ID: {}\n{}", eventId, updateEventAdminRequest);
@@ -256,6 +334,14 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toEventFullDto(savedEvent);
     }
 
+    /**
+     * Получение события по ID для публичного доступа.
+     *
+     * @param id      ID события.
+     * @param request HTTP-запрос для отслеживания хитов.
+     * @return Полное DTO события.
+     * @throws NotFoundException Если событие не найдено или не опубликовано.
+     */
     @Override
     public EventFullDto getEventByIdPublic(int id, HttpServletRequest request) {
         log.debug("Public:Получение события, ID события:{}", id);
@@ -270,7 +356,21 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toEventFullDto(event);
     }
 
-
+    /**
+     * Получение всех событий с фильтрацией для публичного доступа.
+     *
+     * @param text          Текст для поиска в аннотации или описании событий.
+     * @param categories    Список категорий для фильтрации.
+     * @param paid          Фильтрация по статусу оплаты.
+     * @param rangeStart    Дата и время начала диапазона событий.
+     * @param rangeEnd      Дата и время окончания диапазона событий.
+     * @param onlyAvailable Фильтрация по доступным событиям (с доступными участниками).
+     * @param sort          Тип сортировки событий.
+     * @param from          Смещение для пагинации.
+     * @param size          Размер страницы для пагинации.
+     * @param request       HTTP-запрос для отслеживания хитов.
+     * @return Список кратких DTO событий.
+     */
     @Override
     public List<EventShortDto> getAllEventsPublic(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
                                                   LocalDateTime rangeEnd, Boolean onlyAvailable, String sort,
@@ -334,9 +434,16 @@ public class EventServiceImpl implements EventService {
         createHit(request);
         setViews(events);
         log.info("Public:Получены события :\n{}", events);
-        return events.stream().map(eventMapper::toEventShortDto).toList();
+        return events.stream().map(eventMapper::toEventShortDto).collect(Collectors.toList());
     }
 
+    /**
+     * Получает событие по ID или выбрасывает исключение, если событие не найдено.
+     *
+     * @param eventId ID события.
+     * @return Событие с указанным ID.
+     * @throws NotFoundException если событие не найдено.
+     */
     @Override
     public Event getEventByIdOrThrow(long eventId) {
         log.info("Попытка получения События по ID: {}", eventId);
@@ -344,6 +451,15 @@ public class EventServiceImpl implements EventService {
                 "Event with id = " + eventId + " was not found"));
     }
 
+    /**
+     * Получает событие и проверяет, является ли пользователь владельцем этого события.
+     *
+     * @param userId  ID пользователя.
+     * @param eventId ID события.
+     * @return Событие с указанным ID.
+     * @throws NotFoundException      если событие не найдено.
+     * @throws AuthorizationException если пользователь не является владельцем события.
+     */
     @Override
     public Event getEventAndCheckAuthorization(long userId, long eventId) {
         log.info("Проверка авторизации, Пользователь ID: {}, Событие ID: {}", userId, eventId);
@@ -355,11 +471,26 @@ public class EventServiceImpl implements EventService {
         return event;
     }
 
+    /**
+     * Создаёт объект Pageable для пагинации с указанными параметрами.
+     *
+     * @param from Начальный индекс для пагинации.
+     * @param size Размер страницы.
+     * @param sort Параметры сортировки.
+     * @return Объект Pageable для дальнейшего использования в запросах.
+     */
     private Pageable createPageable(int from, int size, Sort sort) {
         log.debug("Create Pageable with offset from {}, size {}", from, size);
         return PageRequest.of(from / size, size, sort);
     }
 
+    /**
+     * Обновляет событие на основе данных из запроса для пользователя.
+     *
+     * @param updateEventUserRequest Данные запроса для обновления события.
+     * @param event                  Существующее событие, которое нужно обновить.
+     * @return Обновлённое событие.
+     */
     private Event buildPrivateEventForUpdate(UpdateEventUserRequest updateEventUserRequest, Event event) {
         Optional.ofNullable(updateEventUserRequest.getAnnotation()).ifPresent(event::setAnnotation);
         if (updateEventUserRequest.getCategory() != null) {
@@ -389,7 +520,13 @@ public class EventServiceImpl implements EventService {
         return event;
     }
 
-
+    /**
+     * Обновляет событие на основе данных из запроса для администратора.
+     *
+     * @param updateEventAdminRequest Данные запроса для обновления события.
+     * @param event                   Существующее событие, которое нужно обновить.
+     * @return Обновлённое событие.
+     */
     private Event buildAdminEventForUpdate(UpdateEventAdminRequest updateEventAdminRequest, Event event) {
         Optional.ofNullable(updateEventAdminRequest.getAnnotation()).ifPresent(event::setAnnotation);
         log.debug("Обновлено поле annotation: {}", updateEventAdminRequest.getAnnotation());
@@ -424,6 +561,14 @@ public class EventServiceImpl implements EventService {
         return event;
     }
 
+    /**
+     * Проверяет корректность временных рамок для событий.
+     *
+     * @param rangeStart     Начало временного интервала.
+     * @param rangeEnd       Конец временного интервала.
+     * @param booleanBuilder Строитель логического выражения для фильтрации.
+     * @throws DataTimeException если время начала позже времени окончания.
+     */
     private void checkTime(LocalDateTime rangeStart, LocalDateTime rangeEnd, BooleanBuilder booleanBuilder) {
         if (rangeStart != null && rangeEnd != null) {
             if (rangeStart.isAfter(rangeEnd)) {
@@ -437,6 +582,11 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    /**
+     * Отправляет информацию о визите на сервер статистики.
+     *
+     * @param request HTTP запрос для получения информации о визите.
+     */
     private void createHit(HttpServletRequest request) {
         DtoEndpointHit dtoEndpointHit = DtoEndpointHit.builder()
                 .app(serviceName)
@@ -448,6 +598,12 @@ public class EventServiceImpl implements EventService {
         statisticsClient.createHit(dtoEndpointHit);
     }
 
+    /**
+     * Получает статистику просмотров для списка событий.
+     *
+     * @param events Список событий.
+     * @return Список статистики просмотров.
+     */
     private List<DtoViewStats> getStats(List<Event> events) {
         List<String> uris = events.stream().map(event -> "/events/" + event.getId()).toList();
         log.info("uris: {}", uris);
@@ -461,6 +617,11 @@ public class EventServiceImpl implements EventService {
         return stats;
     }
 
+    /**
+     * Устанавливает количество просмотров для списка событий.
+     *
+     * @param events Список событий.
+     */
     private void setViews(List<Event> events) {
         log.info("events: {}", events);
         if (events.isEmpty()) {

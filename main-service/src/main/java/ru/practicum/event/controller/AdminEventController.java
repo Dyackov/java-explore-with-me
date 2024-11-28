@@ -15,6 +15,10 @@ import ru.practicum.event.service.EventService;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Контроллер для администрирования событий.
+ * Обрабатывает запросы, касающиеся получения и обновления событий.
+ */
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/admin/events")
@@ -24,6 +28,19 @@ public class AdminEventController {
 
     private final EventService eventServiceImpl;
 
+    /**
+     * Получение всех событий с возможностью фильтрации по параметрам.
+     *
+     * @param users     список ID пользователей, чьи события нужно отобразить
+     * @param states    список состояний событий
+     * @param categories список категорий, к которым принадлежат события
+     * @param rangeStart дата начала диапазона событий
+     * @param rangeEnd дата окончания диапазона событий
+     * @param from      с какого события начать вывод (для пагинации)
+     * @param size      количество событий на странице (для пагинации)
+     * @param request   HTTP запрос для логирования
+     * @return список событий
+     */
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<EventFullDto> getAllEventsAdmin(@RequestParam(required = false) List<Long> users,
@@ -38,7 +55,7 @@ public class AdminEventController {
                                                 HttpServletRequest request) {
         logRequestDetails(request);
         log.info("""
-                Admin:Получен запрос на поиск событий:
+                Admin: Получен запрос на поиск событий:
                 Список ID пользователей: {}
                 Список состояний: {}
                 Список ID категорий: {}
@@ -48,16 +65,29 @@ public class AdminEventController {
         return eventServiceImpl.getAllEventsAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
+    /**
+     * Обновление события.
+     *
+     * @param eventId                 ID события, которое нужно обновить
+     * @param updateEventAdminRequest объект с новыми данными для события
+     * @param request                 HTTP запрос для логирования
+     * @return обновленное событие
+     */
     @PatchMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
     public EventFullDto updateEventAdmin(@PathVariable long eventId,
                                          @RequestBody @Valid UpdateEventAdminRequest updateEventAdminRequest,
                                          HttpServletRequest request) {
         logRequestDetails(request);
-        log.info("Admin:Получен запрос на обновление события. ID события: {}.\n{}", eventId, updateEventAdminRequest);
+        log.info("Admin: Получен запрос на обновление события. ID события: {}.\n{}", eventId, updateEventAdminRequest);
         return eventServiceImpl.updateEvent(eventId, updateEventAdminRequest);
     }
 
+    /**
+     * Логирует детали HTTP запроса.
+     *
+     * @param request HTTP запрос
+     */
     private void logRequestDetails(HttpServletRequest request) {
         String method = request.getMethod();
         String url = request.getRequestURL().toString();
